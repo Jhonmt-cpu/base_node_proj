@@ -6,10 +6,10 @@ type ICreateUserDTO = {
   user_password: string;
   user_cpf: string;
   user_gender_id: number;
-}
+};
 
 type IUserRepository = {
   create(data: ICreateUserDTO): Promise<UserEntity>;
-}
+};
 
 export { IUserRepository, ICreateUserDTO };

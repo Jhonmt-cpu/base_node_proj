@@ -1,9 +1,9 @@
-import express, { NextFunction, Request, Response } from 'express';
-import { router } from './routes';
-import { errors } from 'celebrate';
+import express, { NextFunction, Request, Response } from "express";
+import { router } from "./routes";
+import { errors } from "celebrate";
 
-import '../../container';
-import { AppError } from '../../errors/AppError';
+import "../../container";
+import { AppError } from "../../errors/AppError";
 
 const app = express();
 
@@ -13,6 +13,7 @@ app.use(router);
 
 app.use(errors());
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 app.use((err: Error, request: Request, response: Response, _: NextFunction) => {
   if (err instanceof AppError) {
     return response.status(err.statusCode).json({
@@ -23,7 +24,7 @@ app.use((err: Error, request: Request, response: Response, _: NextFunction) => {
   console.log(err);
 
   return response.status(500).json({
-    status: 'error',
+    status: "error",
     message: `Internal server error - ${err.message}`,
   });
 });

@@ -1,0 +1,25 @@
+version: '3.9'
+services:
+  easy_find_db:
+    image: postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    ports:
+      - ${POSTGRES_PORT}:5432
+    volumes:
+      - pgdata:/data/postgres
+
+  easy_find_cache:
+    image: redis
+    command: ["redis-server", "--aclfile /data/users.acl"]
+    volumes:
+      - ./users.acl:/data/users.acl
+    ports:
+      - "${REDIS_CACHE_PORT}:6379"
+    
+
+volumes:
+  pgdata:
+    driver: local
