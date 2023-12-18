@@ -1,5 +1,6 @@
 import { Request, Response } from "express";
 import { container } from "tsyringe";
+
 import { CreateRoleUseCase } from "./CreateRoleUseCase";
 
 class CreateRoleController {
@@ -14,4 +15,4 @@ class CreateRoleController {
   }
 }
 
-export { CreateRoleController }
+export { CreateRoleController };

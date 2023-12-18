@@ -1,16 +1,13 @@
-import {
-  ICreateUserDTO,
-  IUserRepository,
-} from "@modules/users/repositories/IUserRepository";
+import { UserEntity } from "@modules/users/infra/knex/entities/UserEntity";
 
-import { UserEntity } from "../entities/UserEntity";
+import { ICreateUserDTO, IUserRepository } from "../IUserRepository";
 
-class UserRepository implements IUserRepository {
-  private static users: UserEntity[] = [];
+class UserRepositoryInMemory implements IUserRepository {
+  private users: UserEntity[] = [];
 
   async create(data: ICreateUserDTO): Promise<UserEntity> {
     const user = new UserEntity({
-      user_id: UserRepository.users.length + 1,
+      user_id: this.users.length + 1,
       user_name: data.user_name,
       user_email: data.user_email,
       user_password: data.user_password,
@@ -21,10 +18,10 @@ class UserRepository implements IUserRepository {
       user_updated_at: new Date(),
     });
 
-    UserRepository.users.push(user);
+    this.users.push(user);
 
     return user;
   }
 }
 
-export { UserRepository };
+export { UserRepositoryInMemory };

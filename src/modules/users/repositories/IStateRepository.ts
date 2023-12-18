@@ -1,12 +1,9 @@
-import { StateEntity } from "../infra/knex/entities/StateEntity";
-
-type ICreateStateDTO = {
-  state_name: string;
-  state_uf: string;
-};
+import { StateEntity } from "@modules/users/infra/knex/entities/StateEntity";
+import { ICreateStateDTO } from "@modules/users/@types/ICreateStateDTO";
 
 type IStateRepository = {
   create(data: ICreateStateDTO): Promise<StateEntity>;
+  findAll(): Promise<StateEntity[]>;
 };
 
 export { IStateRepository, ICreateStateDTO };

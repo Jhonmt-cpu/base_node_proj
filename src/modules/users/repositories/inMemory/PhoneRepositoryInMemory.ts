@@ -1,12 +1,12 @@
+import { PhoneEntity } from "@modules/users/infra/knex/entities/PhoneEntity";
+
 import {
   ICreatePhoneRepositoryDTO,
   IPhoneRepository,
-} from "@modules/users/repositories/IPhoneRepository";
+} from "../IPhoneRepository";
 
-import { PhoneEntity } from "../entities/PhoneEntity";
-
-class PhoneRepository implements IPhoneRepository {
-  private static phones: PhoneEntity[] = [];
+class PhoneRepositoryInMemory implements IPhoneRepository {
+  private phones: PhoneEntity[] = [];
 
   async create(data: ICreatePhoneRepositoryDTO): Promise<PhoneEntity> {
     const phone = new PhoneEntity({
@@ -16,10 +16,10 @@ class PhoneRepository implements IPhoneRepository {
       phone_updated_at: new Date(),
     });
 
-    PhoneRepository.phones.push(phone);
+    this.phones.push(phone);
 
     return phone;
   }
 }
 
-export { PhoneRepository };
+export { PhoneRepositoryInMemory };

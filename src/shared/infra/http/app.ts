@@ -1,9 +1,11 @@
 import express, { NextFunction, Request, Response } from "express";
-import { router } from "./routes";
 import { errors } from "celebrate";
 
-import "../../container";
-import { AppError } from "../../errors/AppError";
+import { AppError } from "@errors/AppError";
+
+import { router } from "./routes";
+
+import "@shared/container";
 
 const app = express();
 

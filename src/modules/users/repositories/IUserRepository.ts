@@ -1,4 +1,4 @@
-import { UserEntity } from "../infra/knex/entities/UserEntity";
+import { UserEntity } from "@modules/users/infra/knex/entities/UserEntity";
 
 type ICreateUserDTO = {
   user_name: string;

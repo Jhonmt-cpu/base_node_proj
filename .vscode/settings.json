@@ -2,6 +2,7 @@
   "cSpell.words": [
     "knexfile",
     "SMALLSERIAL",
-    "TINYINT"
+    "TINYINT",
+    "tsyringe"
   ]
 }

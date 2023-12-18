@@ -1,4 +1,4 @@
-import { AddressEntity } from "../infra/knex/entities/AddressEntity";
+import { AddressEntity } from "@modules/users/infra/knex/entities/AddressEntity";
 
 type ICreateAddressDTO = {
   user_address_id: number;

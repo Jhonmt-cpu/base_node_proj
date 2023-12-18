@@ -1,4 +1,4 @@
-import { NeighborhoodEntity } from "../infra/knex/entities/NeighborhoodEntity";
+import { NeighborhoodEntity } from "@modules/users/infra/knex/entities/NeighborhoodEntity";
 
 type ICreateNeighborhoodDTO = {
   neighborhood_name: string;

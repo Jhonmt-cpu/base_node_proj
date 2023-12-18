@@ -1,23 +1,27 @@
 import {
   ICreateStateDTO,
   IStateRepository,
-} from "../../../repositories/IStateRepository";
+} from "@modules/users/repositories/IStateRepository";
+
 import { StateEntity } from "../entities/StateEntity";
+import { dbConnection } from "@shared/infra/database/knex";
 
 class StateRepository implements IStateRepository {
-  private static states: StateEntity[] = [];
-
   async create(data: ICreateStateDTO): Promise<StateEntity> {
-    const state = new StateEntity({
-      state_id: StateRepository.states.length + 1,
-      state_name: data.state_name,
-      state_uf: data.state_uf,
-      state_created_at: new Date(),
-    });
+    const state = await dbConnection<StateEntity>("tb_states")
+      .insert({
+        state_name: data.state_name,
+        state_uf: data.state_uf,
+      })
+      .returning("*");
 
-    StateRepository.states.push(state);
+    return state[0];
+  }
 
-    return state;
+  async findAll(): Promise<StateEntity[]> {
+    const states = await dbConnection<StateEntity>("tb_states").select("*");
+
+    return states;
   }
 }
 

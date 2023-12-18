@@ -1,7 +1,8 @@
 import {
   ICityRepository,
   ICreateCityDTO,
-} from "../../../repositories/ICityRepository";
+} from "@modules/users/repositories/ICityRepository";
+
 import { CityEntity } from "../entities/CityEntity";
 
 class CityRepository implements ICityRepository {

@@ -1,4 +1,4 @@
-import { CityEntity } from "../infra/knex/entities/CityEntity";
+import { CityEntity } from "@modules/users/infra/knex/entities/CityEntity";
 
 type ICreateCityDTO = {
   city_name: string;

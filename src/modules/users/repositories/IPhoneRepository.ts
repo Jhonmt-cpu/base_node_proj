@@ -1,4 +1,4 @@
-import { PhoneEntity } from "../infra/knex/entities/PhoneEntity";
+import { PhoneEntity } from "@modules/users/infra/knex/entities/PhoneEntity";
 
 type ICreatePhoneRepositoryDTO = {
   user_phone_id: number;

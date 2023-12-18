@@ -1,7 +1,8 @@
 import {
   ICreateNeighborhoodDTO,
   INeighborhoodRepository,
-} from "../../../repositories/INeighborhoodRepository";
+} from "@modules/users/repositories/INeighborhoodRepository";
+
 import { NeighborhoodEntity } from "../entities/NeighborhoodEntity";
 
 class NeighborhoodRepository implements INeighborhoodRepository {

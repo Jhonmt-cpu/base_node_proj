@@ -1,12 +1,9 @@
-import {
-  IAddressRepository,
-  ICreateAddressDTO,
-} from "@modules/users/repositories/IAddressRepository";
+import { AddressEntity } from "@modules/users/infra/knex/entities/AddressEntity";
 
-import { AddressEntity } from "../entities/AddressEntity";
+import { IAddressRepository, ICreateAddressDTO } from "../IAddressRepository";
 
-class AddressRepository implements IAddressRepository {
-  private static addresses: AddressEntity[] = [];
+class AddressRepositoryInMemory implements IAddressRepository {
+  private addresses: AddressEntity[] = [];
 
   async create(data: ICreateAddressDTO): Promise<AddressEntity> {
     const address = new AddressEntity({
@@ -19,10 +16,10 @@ class AddressRepository implements IAddressRepository {
       address_updated_at: new Date(),
     });
 
-    AddressRepository.addresses.push(address);
+    this.addresses.push(address);
 
     return address;
   }
 }
 
-export { AddressRepository };
+export { AddressRepositoryInMemory };
