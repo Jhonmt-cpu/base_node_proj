@@ -6,7 +6,7 @@ let roleRepositoryInMemory: RoleRepositoryInMemory;
 
 let listAllRolesPaginatedUseCase: ListAllRolesPaginatedUseCase;
 
-describe("List All Roles", () => {
+describe("List All Roles Paginated", () => {
   beforeEach(() => {
     roleRepositoryInMemory = new RoleRepositoryInMemory();
 
@@ -53,25 +53,5 @@ describe("List All Roles", () => {
     expect(roles30.length).toEqual(20);
     expect(roles30[0].role_name).toEqual("role_test_0");
     expect(roles5[0].role_name).toEqual("role_test_15");
-  });
-
-  it("should be able to list roles if page or limit are 0", async () => {
-    for (let i = 0; i < 20; i++) {
-      await roleRepositoryInMemory.create({
-        role_name: `role_test_${i}`,
-      });
-    }
-
-    const rolesPage0 = await listAllRolesPaginatedUseCase.execute({
-      page: 0,
-      limit: 10,
-    });
-    const rolesLimit0 = await listAllRolesPaginatedUseCase.execute({
-      page: 1,
-      limit: 0,
-    });
-
-    expect(rolesPage0.length).toEqual(20);
-    expect(rolesLimit0.length).toEqual(20);
   });
 });

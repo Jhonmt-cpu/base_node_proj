@@ -8,7 +8,9 @@ class ListAllStatesController {
 
     const states = await listAllStatesUseCase.execute();
 
-    return response.status(200).json(states);
+    const status = states.length === 0 ? 204 : 200;
+
+    return response.status(status).json(states);
   }
 }
 

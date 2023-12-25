@@ -1,15 +1,23 @@
 import { UserEntity } from "@modules/users/infra/knex/entities/UserEntity";
 
-type ICreateUserDTO = {
+type ICreateUserRepositoryDTO = {
   user_name: string;
   user_email: string;
   user_password: string;
-  user_cpf: string;
+  user_cpf: number;
   user_gender_id: number;
 };
 
-type IUserRepository = {
-  create(data: ICreateUserDTO): Promise<UserEntity>;
+type IFindUserByEmailOrCpfDTO = {
+  user_email: string;
+  user_cpf: number;
 };
 
-export { IUserRepository, ICreateUserDTO };
+type IUserRepository = {
+  create(data: ICreateUserRepositoryDTO): Promise<UserEntity>;
+  findByEmailOrCpf(
+    data: IFindUserByEmailOrCpfDTO,
+  ): Promise<UserEntity | undefined>;
+};
+
+export { IUserRepository, ICreateUserRepositoryDTO, IFindUserByEmailOrCpfDTO };

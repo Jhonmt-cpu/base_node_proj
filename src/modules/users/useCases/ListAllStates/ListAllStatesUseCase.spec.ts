@@ -5,7 +5,7 @@ let stateRepositoryInMemory: StateRepositoryInMemory;
 
 let listAllStatesUseCase: ListAllStatesUseCase;
 
-describe("ListAllStatesUseCase", () => {
+describe("List All States", () => {
   beforeEach(() => {
     stateRepositoryInMemory = new StateRepositoryInMemory();
 

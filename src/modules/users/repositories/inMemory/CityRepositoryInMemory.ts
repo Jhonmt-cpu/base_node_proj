@@ -1,7 +1,9 @@
 import { CityEntity } from "@modules/users/infra/knex/entities/CityEntity";
 
-import { ICityRepository, ICreateCityDTO } from "../ICityRepository";
+import { IFindCitiesByStateDTO } from "@modules/users/@types/IFindCitiesByStateDTO";
+import { ICreateCityDTO } from "@modules/users/@types/ICreateCityDTO";
 
+import { ICityRepository } from "../ICityRepository";
 class CityRepositoryInMemory implements ICityRepository {
   private cities: CityEntity[] = [];
 
@@ -14,6 +16,22 @@ class CityRepositoryInMemory implements ICityRepository {
     });
 
     this.cities.push(city);
+
+    return city;
+  }
+
+  async findByState({
+    state_id,
+  }: IFindCitiesByStateDTO): Promise<CityEntity[]> {
+    const cities = this.cities.filter(
+      (city) => city.city_state_id === state_id,
+    );
+
+    return cities;
+  }
+
+  async findById(id: number): Promise<CityEntity | undefined> {
+    const city = this.cities.find((city) => city.city_id === id);
 
     return city;
   }

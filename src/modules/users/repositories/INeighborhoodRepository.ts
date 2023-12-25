@@ -1,12 +1,14 @@
 import { NeighborhoodEntity } from "@modules/users/infra/knex/entities/NeighborhoodEntity";
 
-type ICreateNeighborhoodDTO = {
-  neighborhood_name: string;
-  neighborhood_city_id: number;
-};
+import { ICreateNeighborhoodDTO } from "../@types/ICreateNeighborhoodDTO";
+import { IFindNeighborhoodsByCityDTO } from "../@types/IFindNeighborhoodsByCityDTO";
 
 type INeighborhoodRepository = {
   create(data: ICreateNeighborhoodDTO): Promise<NeighborhoodEntity>;
+  findByCityId(
+    data: IFindNeighborhoodsByCityDTO,
+  ): Promise<NeighborhoodEntity[]>;
+  findById(neighborhood_id: number): Promise<NeighborhoodEntity | undefined>;
 };
 
-export { ICreateNeighborhoodDTO, INeighborhoodRepository };
+export { INeighborhoodRepository };

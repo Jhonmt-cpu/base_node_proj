@@ -28,6 +28,23 @@ class GenderRepository implements IGenderRepository {
 
     return genders;
   }
+
+  async findAll(): Promise<GenderEntity[]> {
+    const genders = await dbConnection<GenderEntity>("tb_genders").select("*");
+
+    return genders;
+  }
+
+  async findById(gender_id: number): Promise<GenderEntity | undefined> {
+    const gender = await dbConnection<GenderEntity>("tb_genders")
+      .select("*")
+      .where({
+        gender_id,
+      })
+      .first();
+
+    return gender;
+  }
 }
 
 export { GenderRepository };

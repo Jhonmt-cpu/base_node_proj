@@ -5,7 +5,7 @@ let listAllGendersPaginatedUseCase: ListAllGendersPaginatedUseCase;
 
 let genderRepositoryInMemory: GenderRepositoryInMemory;
 
-describe("ListAllGendersPaginatedUseCase", () => {
+describe("List All Genders Paginated", () => {
   beforeEach(() => {
     genderRepositoryInMemory = new GenderRepositoryInMemory();
 
@@ -52,25 +52,5 @@ describe("ListAllGendersPaginatedUseCase", () => {
     expect(genders30.length).toEqual(20);
     expect(genders30[0].gender_name).toEqual("gender_test_0");
     expect(genders5[0].gender_name).toEqual("gender_test_15");
-  });
-
-  it("should be able to list genders if page or limit are 0", async () => {
-    for (let i = 0; i < 20; i++) {
-      await genderRepositoryInMemory.create({
-        gender_name: `gender_test_${i}`,
-      });
-    }
-
-    const gendersPage0 = await listAllGendersPaginatedUseCase.execute({
-      page: 0,
-      limit: 10,
-    });
-    const gendersLimit0 = await listAllGendersPaginatedUseCase.execute({
-      page: 1,
-      limit: 0,
-    });
-
-    expect(gendersPage0.length).toEqual(20);
-    expect(gendersLimit0.length).toEqual(20);
   });
 });

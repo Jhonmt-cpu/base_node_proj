@@ -23,6 +23,17 @@ class StateRepository implements IStateRepository {
 
     return states;
   }
+
+  async findById(id: number): Promise<StateEntity | undefined> {
+    const state = await dbConnection<StateEntity>("tb_states")
+      .select("*")
+      .where({
+        state_id: id,
+      })
+      .first();
+
+    return state;
+  }
 }
 
 export { StateRepository };

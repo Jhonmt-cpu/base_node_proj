@@ -12,7 +12,7 @@ class UserEntity {
 
   user_password: string;
 
-  user_cpf: string;
+  user_cpf: number;
 
   user_gender_id: number;
 
@@ -22,7 +22,7 @@ class UserEntity {
 
   user_address?: AddressEntity;
 
-  user_role_id: number;
+  user_role_id?: number;
 
   user_role?: RoleEntity;
 

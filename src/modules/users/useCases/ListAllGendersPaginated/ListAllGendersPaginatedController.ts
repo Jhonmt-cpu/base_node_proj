@@ -21,7 +21,9 @@ class ListAllGendersPaginatedController {
 
     const genders = await listAllGendersPaginatedUseCase.execute(data);
 
-    return response.status(200).json(genders);
+    const status = genders.length === 0 ? 204 : 200;
+
+    return response.status(status).json(genders);
   }
 }
 

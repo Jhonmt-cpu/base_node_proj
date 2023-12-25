@@ -11,11 +11,6 @@ class ListAllRolesPaginatedUseCase {
   ) {}
 
   async execute(data: IFindAllPaginatedDTO) {
-    if (data.page <= 0 || data.limit <= 0) {
-      data.page = 1;
-      data.limit = 20;
-    }
-
     const roles = await this.rolesRepository.findAllPaginated(data);
 
     return roles;

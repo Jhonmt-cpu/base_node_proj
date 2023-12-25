@@ -3,6 +3,7 @@ import { ICreateStateDTO } from "@modules/users/@types/ICreateStateDTO";
 
 type IStateRepository = {
   create(data: ICreateStateDTO): Promise<StateEntity>;
+  findById(id: number): Promise<StateEntity | undefined>;
   findAll(): Promise<StateEntity[]>;
 };
 

@@ -6,8 +6,16 @@ type ICreatePhoneRepositoryDTO = {
   phone_ddd: number;
 };
 
+type IFindByDDDAndNumberDTO = {
+  phone_ddd: number;
+  phone_number: number;
+};
+
 type IPhoneRepository = {
   create(data: ICreatePhoneRepositoryDTO): Promise<PhoneEntity>;
+  findByDDDAndNumber(
+    data: IFindByDDDAndNumberDTO,
+  ): Promise<PhoneEntity | undefined>;
 };
 
 export { IPhoneRepository, ICreatePhoneRepositoryDTO };

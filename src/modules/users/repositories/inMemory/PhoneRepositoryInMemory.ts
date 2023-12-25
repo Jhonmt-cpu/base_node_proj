@@ -20,6 +20,18 @@ class PhoneRepositoryInMemory implements IPhoneRepository {
 
     return phone;
   }
+
+  async findByDDDAndNumber({
+    phone_ddd,
+    phone_number,
+  }: ICreatePhoneRepositoryDTO): Promise<PhoneEntity | undefined> {
+    const phone = this.phones.find(
+      (phone) =>
+        phone.phone_ddd === phone_ddd && phone.phone_number === phone_number,
+    );
+
+    return phone;
+  }
 }
 
 export { PhoneRepositoryInMemory };

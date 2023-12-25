@@ -11,11 +11,6 @@ class ListAllGendersPaginatedUseCase {
   ) {}
 
   async execute({ page, limit }: IFindAllPaginatedDTO) {
-    if (page <= 0 || limit <= 0) {
-      page = 1;
-      limit = 20;
-    }
-
     const genders = await this.gendersRepository.findAllPaginated({
       page,
       limit,

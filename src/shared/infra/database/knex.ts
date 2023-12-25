@@ -8,6 +8,7 @@ const dbConnection = knex({
     password: process.env.POSTGRES_PASSWORD,
     port: Number(process.env.POSTGRES_PORT),
     database: process.env.POSTGRES_DB,
+    timezone: process.env.TZ,
   },
 });
 

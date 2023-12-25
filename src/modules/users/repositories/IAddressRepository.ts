@@ -1,6 +1,6 @@
 import { AddressEntity } from "@modules/users/infra/knex/entities/AddressEntity";
 
-type ICreateAddressDTO = {
+type ICreateAddressRepositoryDTO = {
   user_address_id: number;
   address_street: string;
   address_number: number;
@@ -10,7 +10,7 @@ type ICreateAddressDTO = {
 };
 
 type IAddressRepository = {
-  create(data: ICreateAddressDTO): Promise<AddressEntity>;
+  create(data: ICreateAddressRepositoryDTO): Promise<AddressEntity>;
 };
 
-export { IAddressRepository, ICreateAddressDTO };
+export { IAddressRepository, ICreateAddressRepositoryDTO as ICreateAddressDTO };

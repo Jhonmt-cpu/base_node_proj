@@ -1,11 +1,15 @@
 import { UserEntity } from "@modules/users/infra/knex/entities/UserEntity";
 
-import { ICreateUserDTO, IUserRepository } from "../IUserRepository";
+import {
+  ICreateUserRepositoryDTO,
+  IFindUserByEmailOrCpfDTO,
+  IUserRepository,
+} from "../IUserRepository";
 
 class UserRepositoryInMemory implements IUserRepository {
   private users: UserEntity[] = [];
 
-  async create(data: ICreateUserDTO): Promise<UserEntity> {
+  async create(data: ICreateUserRepositoryDTO): Promise<UserEntity> {
     const user = new UserEntity({
       user_id: this.users.length + 1,
       user_name: data.user_name,
@@ -19,6 +23,17 @@ class UserRepositoryInMemory implements IUserRepository {
     });
 
     this.users.push(user);
+
+    return user;
+  }
+
+  async findByEmailOrCpf({
+    user_email,
+    user_cpf,
+  }: IFindUserByEmailOrCpfDTO): Promise<UserEntity | undefined> {
+    const user = this.users.find(
+      (user) => user.user_email === user_email || user.user_cpf === user_cpf,
+    );
 
     return user;
   }
