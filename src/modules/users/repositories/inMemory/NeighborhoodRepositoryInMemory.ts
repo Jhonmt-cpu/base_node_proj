@@ -1,30 +1,32 @@
 import { NeighborhoodEntity } from "@modules/users/infra/knex/entities/NeighborhoodEntity";
 
-import { ICreateNeighborhoodDTO } from "@modules/users/@types/ICreateNeighborhoodDTO";
-import { IFindNeighborhoodsByCityDTO } from "@modules/users/@types/IFindNeighborhoodsByCityDTO";
+import {
+  INeighborhoodRepository,
+  ICreateNeighborhoodRepositoryDTO,
+} from "../INeighborhoodRepository";
 
-import { INeighborhoodRepository } from "../INeighborhoodRepository";
+import { DatabaseInMemory } from "./DatabaseInMemory";
 
 class NeighborHoodRepositoryInMemory implements INeighborhoodRepository {
-  private neighborhoods: NeighborhoodEntity[] = [];
+  constructor(private databaseInMemory: DatabaseInMemory) {}
 
-  async create(data: ICreateNeighborhoodDTO): Promise<NeighborhoodEntity> {
+  async create(
+    data: ICreateNeighborhoodRepositoryDTO,
+  ): Promise<NeighborhoodEntity> {
     const neighborhood = new NeighborhoodEntity({
-      neighborhood_id: this.neighborhoods.length + 1,
+      neighborhood_id: this.databaseInMemory.neighborhoods.length + 1,
       neighborhood_name: data.neighborhood_name,
       neighborhood_city_id: data.neighborhood_city_id,
       neighborhood_created_at: new Date(),
     });
 
-    this.neighborhoods.push(neighborhood);
+    this.databaseInMemory.neighborhoods.push(neighborhood);
 
     return neighborhood;
   }
 
-  async findByCityId({
-    city_id,
-  }: IFindNeighborhoodsByCityDTO): Promise<NeighborhoodEntity[]> {
-    const neighborhoods = this.neighborhoods.filter(
+  async findByCityId(city_id: number): Promise<NeighborhoodEntity[]> {
+    const neighborhoods = this.databaseInMemory.neighborhoods.filter(
       (neighborhood) => neighborhood.neighborhood_city_id === city_id,
     );
 
@@ -34,7 +36,7 @@ class NeighborHoodRepositoryInMemory implements INeighborhoodRepository {
   async findById(
     neighborhood_id: number,
   ): Promise<NeighborhoodEntity | undefined> {
-    const neighborhood = this.neighborhoods.find(
+    const neighborhood = this.databaseInMemory.neighborhoods.find(
       (neighborhood) => neighborhood.neighborhood_id === neighborhood_id,
     );
 

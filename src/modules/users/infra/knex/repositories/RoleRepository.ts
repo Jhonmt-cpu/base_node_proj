@@ -1,13 +1,15 @@
 import { dbConnection } from "@shared/infra/database/knex";
 
-import { ICreateRoleDTO } from "@modules/users/@types/ICreateRoleDTO";
 import { IFindAllPaginatedDTO } from "@modules/users/@types/IFindAllPaginatedDTO";
-import { IRoleRepository } from "@modules/users/repositories/IRoleRepository";
+import {
+  ICreateRoleRepositoryDTO,
+  IRoleRepository,
+} from "@modules/users/repositories/IRoleRepository";
 
 import { RoleEntity } from "../entities/RoleEntity";
 
 class RoleRepository implements IRoleRepository {
-  async create(data: ICreateRoleDTO): Promise<RoleEntity> {
+  async create(data: ICreateRoleRepositoryDTO): Promise<RoleEntity> {
     const role = await dbConnection<RoleEntity>("tb_roles")
       .insert({
         role_name: data.role_name,

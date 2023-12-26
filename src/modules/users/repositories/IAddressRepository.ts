@@ -11,6 +11,7 @@ type ICreateAddressRepositoryDTO = {
 
 type IAddressRepository = {
   create(data: ICreateAddressRepositoryDTO): Promise<AddressEntity>;
+  findById(user_address_id: number): Promise<AddressEntity | undefined>;
 };
 
 export { IAddressRepository, ICreateAddressRepositoryDTO as ICreateAddressDTO };

@@ -1,13 +1,13 @@
 import {
-  ICreateStateDTO,
   IStateRepository,
+  ICreateStateRepositoryDTO,
 } from "@modules/users/repositories/IStateRepository";
 
 import { StateEntity } from "../entities/StateEntity";
 import { dbConnection } from "@shared/infra/database/knex";
 
 class StateRepository implements IStateRepository {
-  async create(data: ICreateStateDTO): Promise<StateEntity> {
+  async create(data: ICreateStateRepositoryDTO): Promise<StateEntity> {
     const state = await dbConnection<StateEntity>("tb_states")
       .insert({
         state_name: data.state_name,

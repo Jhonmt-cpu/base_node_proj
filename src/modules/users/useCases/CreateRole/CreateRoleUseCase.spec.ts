@@ -3,6 +3,9 @@ import { RoleRepositoryInMemory } from "@modules/users/repositories/inMemory/Rol
 import { AppError } from "@errors/AppError";
 
 import { CreateRoleUseCase } from "./CreateRoleUseCase";
+import { DatabaseInMemory } from "@modules/users/repositories/inMemory/DatabaseInMemory";
+
+let databaseInMemory: DatabaseInMemory;
 
 let roleRepositoryInMemory: RoleRepositoryInMemory;
 
@@ -10,7 +13,10 @@ let createRoleUseCase: CreateRoleUseCase;
 
 describe("Create Role", () => {
   beforeEach(() => {
-    roleRepositoryInMemory = new RoleRepositoryInMemory();
+    databaseInMemory = new DatabaseInMemory();
+
+    roleRepositoryInMemory = new RoleRepositoryInMemory(databaseInMemory);
+
     createRoleUseCase = new CreateRoleUseCase(roleRepositoryInMemory);
   });
 

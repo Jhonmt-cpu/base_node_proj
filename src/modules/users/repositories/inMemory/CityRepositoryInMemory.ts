@@ -1,29 +1,32 @@
 import { CityEntity } from "@modules/users/infra/knex/entities/CityEntity";
 
-import { IFindCitiesByStateDTO } from "@modules/users/@types/IFindCitiesByStateDTO";
-import { ICreateCityDTO } from "@modules/users/@types/ICreateCityDTO";
+import {
+  ICityRepository,
+  ICreateCityRepositoryDTO,
+  IFindCitiesByStateRepositoryDTO,
+} from "../ICityRepository";
 
-import { ICityRepository } from "../ICityRepository";
+import { DatabaseInMemory } from "./DatabaseInMemory";
 class CityRepositoryInMemory implements ICityRepository {
-  private cities: CityEntity[] = [];
+  constructor(private databaseInMemory: DatabaseInMemory) {}
 
-  async create(data: ICreateCityDTO): Promise<CityEntity> {
+  async create(data: ICreateCityRepositoryDTO): Promise<CityEntity> {
     const city = new CityEntity({
-      city_id: this.cities.length + 1,
+      city_id: this.databaseInMemory.cities.length + 1,
       city_name: data.city_name,
       city_state_id: data.city_state_id,
       city_created_at: new Date(),
     });
 
-    this.cities.push(city);
+    this.databaseInMemory.cities.push(city);
 
     return city;
   }
 
   async findByState({
     state_id,
-  }: IFindCitiesByStateDTO): Promise<CityEntity[]> {
-    const cities = this.cities.filter(
+  }: IFindCitiesByStateRepositoryDTO): Promise<CityEntity[]> {
+    const cities = this.databaseInMemory.cities.filter(
       (city) => city.city_state_id === state_id,
     );
 
@@ -31,7 +34,9 @@ class CityRepositoryInMemory implements ICityRepository {
   }
 
   async findById(id: number): Promise<CityEntity | undefined> {
-    const city = this.cities.find((city) => city.city_id === id);
+    const city = this.databaseInMemory.cities.find(
+      (city) => city.city_id === id,
+    );
 
     return city;
   }

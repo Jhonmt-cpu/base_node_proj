@@ -1,7 +1,12 @@
 import { CityRepositoryInMemory } from "@modules/users/repositories/inMemory/CityRepositoryInMemory";
 import { StateRepositoryInMemory } from "@modules/users/repositories/inMemory/StateRepositoryInMemory";
-import { ListCitiesByStateUseCase } from "./ListCitiesByStateUseCase";
+import { DatabaseInMemory } from "@modules/users/repositories/inMemory/DatabaseInMemory";
+
 import { AppError } from "@shared/errors/AppError";
+
+import { ListCitiesByStateUseCase } from "./ListCitiesByStateUseCase";
+
+let databaseInMemory: DatabaseInMemory;
 
 let stateRepositoryInMemory: StateRepositoryInMemory;
 
@@ -11,8 +16,9 @@ let listCitiesByStateUseCase: ListCitiesByStateUseCase;
 
 describe("List Cities By State", () => {
   beforeEach(() => {
-    stateRepositoryInMemory = new StateRepositoryInMemory();
-    cityRepositoryInMemory = new CityRepositoryInMemory();
+    databaseInMemory = new DatabaseInMemory();
+    stateRepositoryInMemory = new StateRepositoryInMemory(databaseInMemory);
+    cityRepositoryInMemory = new CityRepositoryInMemory(databaseInMemory);
 
     listCitiesByStateUseCase = new ListCitiesByStateUseCase(
       stateRepositoryInMemory,

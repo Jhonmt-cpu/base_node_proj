@@ -1,9 +1,11 @@
-import { IFindNeighborhoodsByCityDTO } from "@modules/users/@types/IFindNeighborhoodsByCityDTO";
+import { inject, injectable } from "tsyringe";
+
 import { NeighborhoodEntity } from "@modules/users/infra/knex/entities/NeighborhoodEntity";
 import { ICityRepository } from "@modules/users/repositories/ICityRepository";
 import { INeighborhoodRepository } from "@modules/users/repositories/INeighborhoodRepository";
+import { IFindNeighborhoodsByCityDTO } from "@modules/users/@types/IFindNeighborhoodsByCityDTO";
+
 import { AppError } from "@shared/errors/AppError";
-import { inject, injectable } from "tsyringe";
 
 @injectable()
 class ListNeighborhoodsByCityUseCase {
@@ -28,9 +30,9 @@ class ListNeighborhoodsByCityUseCase {
       throw new AppError("City does not exists!", 404);
     }
 
-    const neighborhoods = await this.neighborhoodRepository.findByCityId({
+    const neighborhoods = await this.neighborhoodRepository.findByCityId(
       city_id,
-    });
+    );
 
     return neighborhoods;
   }

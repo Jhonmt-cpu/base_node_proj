@@ -10,6 +10,9 @@ import { ListCitiesByStateController } from "@modules/users/useCases/ListCitiesB
 import { ListNeighborhoodsByCityController } from "@modules/users/useCases/ListNeighborhoodsByCity/ListNeighborhoodsByCityController";
 import { CreateUserController } from "@modules/users/useCases/CreateUser/CreateUserController";
 import { validateCPF } from "@utils/validateCpf";
+import { GetUserController } from "@modules/users/useCases/GetUser/GetUserController";
+import { GetUserAddressController } from "@modules/users/useCases/GetUserAddress/GetUserAddressController";
+import { GetUserCompleteController } from "@modules/users/useCases/GetUserComplete/GetUserCompleteController";
 
 const userRouter = Router();
 
@@ -23,6 +26,9 @@ const listCitiesByStateController = new ListCitiesByStateController();
 const listNeighborhoodsByCityController =
   new ListNeighborhoodsByCityController();
 const createUserController = new CreateUserController();
+const getUserController = new GetUserController();
+const getUserAddressController = new GetUserAddressController();
+const getUserCompleteController = new GetUserCompleteController();
 
 userRouter.post(
   "/role",
@@ -115,6 +121,36 @@ userRouter.post(
     },
   }),
   createUserController.handle,
+);
+
+userRouter.get(
+  "/user/:user_id",
+  celebrate({
+    [Segments.PARAMS]: {
+      user_id: Joi.number().integer().min(1).required(),
+    },
+  }),
+  getUserController.handle,
+);
+
+userRouter.get(
+  "/user/:user_id/address",
+  celebrate({
+    [Segments.PARAMS]: {
+      user_id: Joi.number().integer().min(1).required(),
+    },
+  }),
+  getUserAddressController.handle,
+);
+
+userRouter.get(
+  "/user/:user_id/complete",
+  celebrate({
+    [Segments.PARAMS]: {
+      user_id: Joi.number().integer().min(1).required(),
+    },
+  }),
+  getUserCompleteController.handle,
 );
 
 export { userRouter };

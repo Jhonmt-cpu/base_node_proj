@@ -22,6 +22,17 @@ class AddressRepository implements IAddressRepository {
 
     return address[0];
   }
+
+  async findById(user_address_id: number): Promise<AddressEntity | undefined> {
+    const address = await dbConnection<AddressEntity>("tb_addresses")
+      .select("*")
+      .where({
+        user_address_id,
+      })
+      .first();
+
+    return address;
+  }
 }
 
 export { AddressRepository };

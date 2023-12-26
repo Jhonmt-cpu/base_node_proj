@@ -1,11 +1,16 @@
-import { INeighborhoodRepository } from "@modules/users/repositories/INeighborhoodRepository";
-import { ICreateNeighborhoodDTO } from "@modules/users/@types/ICreateNeighborhoodDTO";
+import { dbConnection } from "@shared/infra/database/knex";
+
+import {
+  INeighborhoodRepository,
+  ICreateNeighborhoodRepositoryDTO,
+} from "@modules/users/repositories/INeighborhoodRepository";
 
 import { NeighborhoodEntity } from "../entities/NeighborhoodEntity";
-import { IFindNeighborhoodsByCityDTO } from "@modules/users/@types/IFindNeighborhoodsByCityDTO";
-import { dbConnection } from "@shared/infra/database/knex";
+
 class NeighborhoodRepository implements INeighborhoodRepository {
-  async create(data: ICreateNeighborhoodDTO): Promise<NeighborhoodEntity> {
+  async create(
+    data: ICreateNeighborhoodRepositoryDTO,
+  ): Promise<NeighborhoodEntity> {
     const neighborhood = await dbConnection<NeighborhoodEntity>(
       "tb_neighborhoods",
     )
@@ -18,9 +23,7 @@ class NeighborhoodRepository implements INeighborhoodRepository {
     return neighborhood[0];
   }
 
-  async findByCityId({
-    city_id,
-  }: IFindNeighborhoodsByCityDTO): Promise<NeighborhoodEntity[]> {
+  async findByCityId(city_id: number): Promise<NeighborhoodEntity[]> {
     const neighborhoods = await dbConnection<NeighborhoodEntity>(
       "tb_neighborhoods",
     )

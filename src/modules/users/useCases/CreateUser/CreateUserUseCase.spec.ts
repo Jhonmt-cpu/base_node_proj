@@ -3,9 +3,12 @@ import { NeighborHoodRepositoryInMemory } from "@modules/users/repositories/inMe
 import { AddressRepositoryInMemory } from "@modules/users/repositories/inMemory/AddressRepositoryInMemory";
 import { PhoneRepositoryInMemory } from "@modules/users/repositories/inMemory/PhoneRepositoryInMemory";
 import { UserRepositoryInMemory } from "@modules/users/repositories/inMemory/UserRepositoryInMemory";
+import { DatabaseInMemory } from "@modules/users/repositories/inMemory/DatabaseInMemory";
 
 import { CreateUserUseCase } from "./CreateUserUseCase";
 import { AppError } from "@shared/errors/AppError";
+
+let databaseInMemory: DatabaseInMemory;
 
 let genderRepository: GenderRepositoryInMemory;
 
@@ -21,11 +24,14 @@ let createUserUseCase: CreateUserUseCase;
 
 describe("Create User", () => {
   beforeEach(() => {
-    genderRepository = new GenderRepositoryInMemory();
-    neighborhoodRepository = new NeighborHoodRepositoryInMemory();
-    addressRepository = new AddressRepositoryInMemory();
-    phoneRepository = new PhoneRepositoryInMemory();
-    userRepository = new UserRepositoryInMemory();
+    databaseInMemory = new DatabaseInMemory();
+    genderRepository = new GenderRepositoryInMemory(databaseInMemory);
+    neighborhoodRepository = new NeighborHoodRepositoryInMemory(
+      databaseInMemory,
+    );
+    addressRepository = new AddressRepositoryInMemory(databaseInMemory);
+    phoneRepository = new PhoneRepositoryInMemory(databaseInMemory);
+    userRepository = new UserRepositoryInMemory(databaseInMemory);
 
     createUserUseCase = new CreateUserUseCase(
       genderRepository,

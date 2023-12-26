@@ -2,8 +2,10 @@ import { AddressEntity } from "@modules/users/infra/knex/entities/AddressEntity"
 
 import { IAddressRepository, ICreateAddressDTO } from "../IAddressRepository";
 
+import { DatabaseInMemory } from "./DatabaseInMemory";
+
 class AddressRepositoryInMemory implements IAddressRepository {
-  private addresses: AddressEntity[] = [];
+  constructor(private databaseInMemory: DatabaseInMemory) {}
 
   async create(data: ICreateAddressDTO): Promise<AddressEntity> {
     const address = new AddressEntity({
@@ -16,7 +18,15 @@ class AddressRepositoryInMemory implements IAddressRepository {
       address_updated_at: new Date(),
     });
 
-    this.addresses.push(address);
+    this.databaseInMemory.addresses.push(address);
+
+    return address;
+  }
+
+  async findById(user_address_id: number): Promise<AddressEntity | undefined> {
+    const address = this.databaseInMemory.addresses.find(
+      (address) => address.user_address_id === user_address_id,
+    );
 
     return address;
   }

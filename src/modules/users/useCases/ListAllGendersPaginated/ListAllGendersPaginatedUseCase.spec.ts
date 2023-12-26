@@ -1,5 +1,9 @@
 import { GenderRepositoryInMemory } from "@modules/users/repositories/inMemory/GenderRepositoryInMemory";
+import { DatabaseInMemory } from "@modules/users/repositories/inMemory/DatabaseInMemory";
+
 import { ListAllGendersPaginatedUseCase } from "./ListAllGendersPaginatedUseCase";
+
+let databaseInMemory: DatabaseInMemory;
 
 let listAllGendersPaginatedUseCase: ListAllGendersPaginatedUseCase;
 
@@ -7,7 +11,8 @@ let genderRepositoryInMemory: GenderRepositoryInMemory;
 
 describe("List All Genders Paginated", () => {
   beforeEach(() => {
-    genderRepositoryInMemory = new GenderRepositoryInMemory();
+    databaseInMemory = new DatabaseInMemory();
+    genderRepositoryInMemory = new GenderRepositoryInMemory(databaseInMemory);
 
     listAllGendersPaginatedUseCase = new ListAllGendersPaginatedUseCase(
       genderRepositoryInMemory,

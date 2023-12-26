@@ -1,9 +1,9 @@
 import { inject, injectable } from "tsyringe";
 
-import { IFindCitiesByStateDTO } from "@modules/users/@types/IFindCitiesByStateDTO";
 import { CityEntity } from "@modules/users/infra/knex/entities/CityEntity";
 import { ICityRepository } from "@modules/users/repositories/ICityRepository";
 import { IStateRepository } from "@modules/users/repositories/IStateRepository";
+import { IFindCitiesByStateDTO } from "@modules/users/@types/IFindCitiesByStateDTO";
 
 import { AppError } from "@shared/errors/AppError";
 

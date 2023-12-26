@@ -1,11 +1,22 @@
 import { CityEntity } from "@modules/users/infra/knex/entities/CityEntity";
-import { ICreateCityDTO } from "../@types/ICreateCityDTO";
-import { IFindCitiesByStateDTO } from "../@types/IFindCitiesByStateDTO";
+
+type ICreateCityRepositoryDTO = {
+  city_name: string;
+  city_state_id: number;
+};
+
+type IFindCitiesByStateRepositoryDTO = {
+  state_id: number;
+};
 
 type ICityRepository = {
-  create(data: ICreateCityDTO): Promise<CityEntity>;
-  findByState(data: IFindCitiesByStateDTO): Promise<CityEntity[]>;
+  create(data: ICreateCityRepositoryDTO): Promise<CityEntity>;
+  findByState(data: IFindCitiesByStateRepositoryDTO): Promise<CityEntity[]>;
   findById(id: number): Promise<CityEntity | undefined>;
 };
 
-export { ICityRepository };
+export {
+  ICityRepository,
+  ICreateCityRepositoryDTO,
+  IFindCitiesByStateRepositoryDTO,
+};

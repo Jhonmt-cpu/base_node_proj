@@ -1,13 +1,13 @@
 import { hash } from "bcryptjs";
 import { inject, injectable } from "tsyringe";
 
-import { ICreateUserDTO } from "@modules/users/@types/ICreateUserDTO";
 import { userToUserResponse } from "@modules/users/mappers/userToUserResponse";
 import { IAddressRepository } from "@modules/users/repositories/IAddressRepository";
 import { IGenderRepository } from "@modules/users/repositories/IGenderRepository";
 import { INeighborhoodRepository } from "@modules/users/repositories/INeighborhoodRepository";
 import { IPhoneRepository } from "@modules/users/repositories/IPhoneRepository";
 import { IUserRepository } from "@modules/users/repositories/IUserRepository";
+import { ICreateUserDTO } from "@modules/users/@types/ICreateUserDTO";
 
 import { AppError } from "@shared/errors/AppError";
 

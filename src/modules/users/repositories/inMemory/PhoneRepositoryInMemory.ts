@@ -5,8 +5,10 @@ import {
   IPhoneRepository,
 } from "../IPhoneRepository";
 
+import { DatabaseInMemory } from "./DatabaseInMemory";
+
 class PhoneRepositoryInMemory implements IPhoneRepository {
-  private phones: PhoneEntity[] = [];
+  constructor(private databaseInMemory: DatabaseInMemory) {}
 
   async create(data: ICreatePhoneRepositoryDTO): Promise<PhoneEntity> {
     const phone = new PhoneEntity({
@@ -16,7 +18,7 @@ class PhoneRepositoryInMemory implements IPhoneRepository {
       phone_updated_at: new Date(),
     });
 
-    this.phones.push(phone);
+    this.databaseInMemory.phones.push(phone);
 
     return phone;
   }
@@ -25,7 +27,7 @@ class PhoneRepositoryInMemory implements IPhoneRepository {
     phone_ddd,
     phone_number,
   }: ICreatePhoneRepositoryDTO): Promise<PhoneEntity | undefined> {
-    const phone = this.phones.find(
+    const phone = this.databaseInMemory.phones.find(
       (phone) =>
         phone.phone_ddd === phone_ddd && phone.phone_number === phone_number,
     );

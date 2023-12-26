@@ -1,12 +1,14 @@
-import { ICityRepository } from "@modules/users/repositories/ICityRepository";
+import { dbConnection } from "@shared/infra/database/knex";
 
-import { IFindCitiesByStateDTO } from "@modules/users/@types/IFindCitiesByStateDTO";
-import { ICreateCityDTO } from "@modules/users/@types/ICreateCityDTO";
+import {
+  ICityRepository,
+  ICreateCityRepositoryDTO,
+  IFindCitiesByStateRepositoryDTO,
+} from "@modules/users/repositories/ICityRepository";
 
 import { CityEntity } from "../entities/CityEntity";
-import { dbConnection } from "@shared/infra/database/knex";
 class CityRepository implements ICityRepository {
-  async create(data: ICreateCityDTO): Promise<CityEntity> {
+  async create(data: ICreateCityRepositoryDTO): Promise<CityEntity> {
     const city = await dbConnection<CityEntity>("tb_cities")
       .insert({
         city_name: data.city_name,
@@ -19,7 +21,7 @@ class CityRepository implements ICityRepository {
 
   async findByState({
     state_id,
-  }: IFindCitiesByStateDTO): Promise<CityEntity[]> {
+  }: IFindCitiesByStateRepositoryDTO): Promise<CityEntity[]> {
     const cities = await dbConnection<CityEntity>("tb_cities")
       .select("*")
       .where({

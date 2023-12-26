@@ -1,20 +1,24 @@
-import { IFindAllPaginatedDTO } from "@modules/users/@types/IFindAllPaginatedDTO";
-import { ICreateGenderDTO } from "@modules/users/@types/iCreateGenderDTO";
 import { GenderEntity } from "@modules/users/infra/knex/entities/GenderEntity";
 
-import { IGenderRepository } from "../IGenderRepository";
+import {
+  IGenderRepository,
+  ICreateGenderRepositoryDTO,
+  IFindAllGendersPaginatedRepositoryDTO,
+} from "../IGenderRepository";
+
+import { DatabaseInMemory } from "./DatabaseInMemory";
 
 class GenderRepositoryInMemory implements IGenderRepository {
-  private genders: GenderEntity[] = [];
+  constructor(private databaseInMemory: DatabaseInMemory) {}
 
-  async create(data: ICreateGenderDTO): Promise<GenderEntity> {
+  async create(data: ICreateGenderRepositoryDTO): Promise<GenderEntity> {
     const gender = new GenderEntity({
-      gender_id: this.genders.length + 1,
+      gender_id: this.databaseInMemory.genders.length + 1,
       gender_name: data.gender_name,
       gender_created_at: new Date(),
     });
 
-    this.genders.push(gender);
+    this.databaseInMemory.genders.push(gender);
 
     return gender;
   }
@@ -22,18 +26,21 @@ class GenderRepositoryInMemory implements IGenderRepository {
   async findAllPaginated({
     page,
     limit,
-  }: IFindAllPaginatedDTO): Promise<GenderEntity[]> {
-    const gender = this.genders.slice((page - 1) * limit, page * limit);
+  }: IFindAllGendersPaginatedRepositoryDTO): Promise<GenderEntity[]> {
+    const gender = this.databaseInMemory.genders.slice(
+      (page - 1) * limit,
+      page * limit,
+    );
 
     return gender;
   }
 
   async findAll(): Promise<GenderEntity[]> {
-    return this.genders;
+    return this.databaseInMemory.genders;
   }
 
   async findById(gender_id: number): Promise<GenderEntity | undefined> {
-    const gender = this.genders.find(
+    const gender = this.databaseInMemory.genders.find(
       (gender) => gender.gender_id === gender_id,
     );
 

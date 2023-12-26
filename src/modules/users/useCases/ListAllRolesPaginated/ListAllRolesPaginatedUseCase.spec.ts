@@ -1,6 +1,9 @@
 import { RoleRepositoryInMemory } from "@modules/users/repositories/inMemory/RoleRepositoryInMemory";
+import { DatabaseInMemory } from "@modules/users/repositories/inMemory/DatabaseInMemory";
 
 import { ListAllRolesPaginatedUseCase } from "./ListAllRolesPaginatedUseCase";
+
+let databaseInMemory: DatabaseInMemory;
 
 let roleRepositoryInMemory: RoleRepositoryInMemory;
 
@@ -8,7 +11,8 @@ let listAllRolesPaginatedUseCase: ListAllRolesPaginatedUseCase;
 
 describe("List All Roles Paginated", () => {
   beforeEach(() => {
-    roleRepositoryInMemory = new RoleRepositoryInMemory();
+    databaseInMemory = new DatabaseInMemory();
+    roleRepositoryInMemory = new RoleRepositoryInMemory(databaseInMemory);
 
     listAllRolesPaginatedUseCase = new ListAllRolesPaginatedUseCase(
       roleRepositoryInMemory,

@@ -1,11 +1,20 @@
-import { ICreateRoleDTO } from "@modules/users/@types/ICreateRoleDTO";
-import { IFindAllPaginatedDTO } from "@modules/users/@types/IFindAllPaginatedDTO";
 import { RoleEntity } from "@modules/users/infra/knex/entities/RoleEntity";
 
-type IRoleRepository = {
-  create(data: ICreateRoleDTO): Promise<RoleEntity>;
-  findByName(role_name: string): Promise<RoleEntity | undefined>;
-  findAllPaginated(data: IFindAllPaginatedDTO): Promise<RoleEntity[]>;
+type ICreateRoleRepositoryDTO = {
+  role_name: string;
 };
 
-export { IRoleRepository };
+type IFindAllRolesPaginatedRepositoryDTO = {
+  page: number;
+  limit: number;
+};
+
+type IRoleRepository = {
+  create(data: ICreateRoleRepositoryDTO): Promise<RoleEntity>;
+  findByName(role_name: string): Promise<RoleEntity | undefined>;
+  findAllPaginated(
+    data: IFindAllRolesPaginatedRepositoryDTO,
+  ): Promise<RoleEntity[]>;
+};
+
+export { IRoleRepository, ICreateRoleRepositoryDTO };

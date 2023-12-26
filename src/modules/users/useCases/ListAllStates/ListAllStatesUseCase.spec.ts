@@ -1,5 +1,9 @@
 import { StateRepositoryInMemory } from "@modules/users/repositories/inMemory/StateRepositoryInMemory";
+import { DatabaseInMemory } from "@modules/users/repositories/inMemory/DatabaseInMemory";
+
 import { ListAllStatesUseCase } from "./ListAllStatesUseCase";
+
+let databaseInMemory: DatabaseInMemory;
 
 let stateRepositoryInMemory: StateRepositoryInMemory;
 
@@ -7,7 +11,8 @@ let listAllStatesUseCase: ListAllStatesUseCase;
 
 describe("List All States", () => {
   beforeEach(() => {
-    stateRepositoryInMemory = new StateRepositoryInMemory();
+    databaseInMemory = new DatabaseInMemory();
+    stateRepositoryInMemory = new StateRepositoryInMemory(databaseInMemory);
 
     listAllStatesUseCase = new ListAllStatesUseCase(stateRepositoryInMemory);
   });
