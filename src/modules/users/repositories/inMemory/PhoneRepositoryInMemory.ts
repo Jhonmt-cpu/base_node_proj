@@ -3,6 +3,7 @@ import { PhoneEntity } from "@modules/users/infra/knex/entities/PhoneEntity";
 import {
   ICreatePhoneRepositoryDTO,
   IPhoneRepository,
+  IUpdatePhoneRepositoryDTO,
 } from "../IPhoneRepository";
 
 import { DatabaseInMemory } from "./DatabaseInMemory";
@@ -33,6 +34,39 @@ class PhoneRepositoryInMemory implements IPhoneRepository {
     );
 
     return phone;
+  }
+
+  async findById(user_phone_id: number): Promise<PhoneEntity | undefined> {
+    const phone = this.databaseInMemory.phones.find(
+      (phone) => phone.user_phone_id === user_phone_id,
+    );
+
+    return phone;
+  }
+
+  async update({
+    user_phone_id,
+    updateFields,
+  }: IUpdatePhoneRepositoryDTO): Promise<PhoneEntity> {
+    const phoneIndex = this.databaseInMemory.phones.findIndex(
+      (phone) => phone.user_phone_id === user_phone_id,
+    );
+
+    if (phoneIndex === -1) {
+      throw new Error("Phone not found");
+    }
+
+    const phone = this.databaseInMemory.phones[phoneIndex];
+
+    const phoneUpdated = {
+      ...phone,
+      ...updateFields,
+      phone_updated_at: new Date(),
+    };
+
+    this.databaseInMemory.phones[phoneIndex] = phoneUpdated;
+
+    return phoneUpdated;
   }
 }
 

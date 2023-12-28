@@ -3,6 +3,7 @@ import { dbConnection } from "@shared/infra/database/knex";
 import {
   INeighborhoodRepository,
   ICreateNeighborhoodRepositoryDTO,
+  IFindNeighborhoodByNameAndCityRepositoryDTO,
 } from "@modules/users/repositories/INeighborhoodRepository";
 
 import { NeighborhoodEntity } from "../entities/NeighborhoodEntity";
@@ -44,6 +45,23 @@ class NeighborhoodRepository implements INeighborhoodRepository {
       .select("*")
       .where({
         neighborhood_id,
+      })
+      .first();
+
+    return neighborhood;
+  }
+
+  findByNameAndCity({
+    neighborhood_city_id,
+    neighborhood_name,
+  }: IFindNeighborhoodByNameAndCityRepositoryDTO): Promise<
+    NeighborhoodEntity | undefined
+  > {
+    const neighborhood = dbConnection<NeighborhoodEntity>("tb_neighborhoods")
+      .select("*")
+      .where({
+        neighborhood_name,
+        neighborhood_city_id,
       })
       .first();
 

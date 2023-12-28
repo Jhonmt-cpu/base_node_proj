@@ -9,7 +9,7 @@ class CreateRoleController {
 
     const createRoleUseCase = container.resolve(CreateRoleUseCase);
 
-    const role = await createRoleUseCase.execute(role_name);
+    const role = await createRoleUseCase.execute({ role_name });
 
     return response.status(201).json(role);
   }

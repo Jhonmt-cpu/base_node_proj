@@ -2,9 +2,13 @@ import { UserEntity } from "@modules/users/infra/knex/entities/UserEntity";
 
 import {
   ICreateUserRepositoryDTO,
+  IFindAllUsersPaginatedRepositoryDTO,
   IFindUserByEmailOrCpfRepositoryDTO,
   IFlatUserCompleteResponseRepositoryDTO,
+  IUserCreateResponseRepositoryDTO,
+  IUserWithoutPasswordRepositoryDTO,
   IUserRepository,
+  IUpdateUserRepositoryDTO,
 } from "../IUserRepository";
 
 import { DatabaseInMemory } from "./DatabaseInMemory";
@@ -12,7 +16,9 @@ import { DatabaseInMemory } from "./DatabaseInMemory";
 class UserRepositoryInMemory implements IUserRepository {
   constructor(private databaseInMemory: DatabaseInMemory) {}
 
-  async create(data: ICreateUserRepositoryDTO): Promise<UserEntity> {
+  async create(
+    data: ICreateUserRepositoryDTO,
+  ): Promise<IUserCreateResponseRepositoryDTO> {
     const userRole = this.databaseInMemory.roles.find(
       (role) => role.role_name === "role_test",
     );
@@ -25,6 +31,7 @@ class UserRepositoryInMemory implements IUserRepository {
       user_email: data.user_email,
       user_password: data.user_password,
       user_cpf: data.user_cpf,
+      user_birth_date: data.user_birth_date,
       user_gender_id: data.user_gender_id,
       user_role_id: userRoleId,
       user_created_at: new Date(),
@@ -33,18 +40,31 @@ class UserRepositoryInMemory implements IUserRepository {
 
     this.databaseInMemory.users.push(user);
 
-    return user;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { user_role_id, user_cpf, user_password, ...userCreateResponse } =
+      user;
+
+    return userCreateResponse;
   }
 
   async findByEmailOrCpf({
     user_email,
     user_cpf,
-  }: IFindUserByEmailOrCpfRepositoryDTO): Promise<UserEntity | undefined> {
+  }: IFindUserByEmailOrCpfRepositoryDTO): Promise<
+    IUserWithoutPasswordRepositoryDTO | undefined
+  > {
     const user = this.databaseInMemory.users.find(
       (user) => user.user_email === user_email || user.user_cpf === user_cpf,
     );
 
-    return user;
+    if (!user) {
+      return undefined;
+    }
+
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { user_password, ...userWithoutPassword } = user;
+
+    return userWithoutPassword;
   }
 
   async findById(user_id: number): Promise<UserEntity | undefined> {
@@ -55,17 +75,17 @@ class UserRepositoryInMemory implements IUserRepository {
     return user;
   }
 
-  async findByIdWithAddressAndPhone(
+  async findByEmail(user_email: string): Promise<UserEntity | undefined> {
+    const user = this.databaseInMemory.users.find(
+      (user) => user.user_email === user_email,
+    );
+
+    return user;
+  }
+
+  async findByIdWithoutPassword(
     user_id: number,
-  ): Promise<UserEntity | undefined> {
-    const phone = this.databaseInMemory.phones.find(
-      (phone) => phone.user_phone_id === user_id,
-    );
-
-    const address = this.databaseInMemory.addresses.find(
-      (address) => address.user_address_id === user_id,
-    );
-
+  ): Promise<IUserWithoutPasswordRepositoryDTO | undefined> {
     const user = this.databaseInMemory.users.find(
       (user) => user.user_id === user_id,
     );
@@ -74,13 +94,13 @@ class UserRepositoryInMemory implements IUserRepository {
       return undefined;
     }
 
-    user.user_address = address;
-    user.user_phone = phone;
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { user_password, ...userWithoutPassword } = user;
 
-    return user;
+    return userWithoutPassword;
   }
 
-  async findByIdComplete(
+  async findByIdCompleteRelations(
     user_id: number,
   ): Promise<IFlatUserCompleteResponseRepositoryDTO | undefined> {
     const user = this.databaseInMemory.users.find(
@@ -160,6 +180,76 @@ class UserRepositoryInMemory implements IUserRepository {
     };
 
     return userResponse;
+  }
+
+  async findAllPaginated({
+    limit,
+    page,
+  }: IFindAllUsersPaginatedRepositoryDTO): Promise<
+    IUserWithoutPasswordRepositoryDTO[]
+  > {
+    const users = this.databaseInMemory.users.slice(
+      (page - 1) * limit,
+      page * limit,
+    );
+
+    const usersWithoutPassword = users.map((user) => {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { user_password, ...userWithoutPassword } = user;
+
+      return userWithoutPassword;
+    });
+
+    return usersWithoutPassword;
+  }
+
+  async deleteById(user_id: number): Promise<void> {
+    const userIndex = this.databaseInMemory.users.findIndex(
+      (user) => user.user_id === user_id,
+    );
+
+    this.databaseInMemory.users.splice(userIndex, 1);
+  }
+
+  async update({
+    user_id,
+    updateFields,
+  }: IUpdateUserRepositoryDTO): Promise<
+    IUserCreateResponseRepositoryDTO | undefined
+  > {
+    const userIndex = this.databaseInMemory.users.findIndex(
+      (user) => user.user_id === user_id,
+    );
+
+    if (userIndex === -1) {
+      throw new Error("User not found");
+    }
+
+    const user = this.databaseInMemory.users[userIndex];
+
+    const userUpdated = {
+      ...user,
+      ...updateFields,
+      user_updated_at: new Date(),
+    };
+
+    this.databaseInMemory.users[userIndex] = userUpdated;
+
+    const {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      user_role_id,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      user_cpf,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      user_password,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      user_gender,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      user_role,
+      ...userCreateResponse
+    } = userUpdated;
+
+    return userCreateResponse;
   }
 }
 

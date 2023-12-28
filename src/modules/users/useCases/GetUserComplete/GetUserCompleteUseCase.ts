@@ -14,7 +14,7 @@ class GetUserCompleteUseCase {
   ) {}
 
   async execute({ user_id }: IFindUserCompleteByIdDTO) {
-    const user = await this.userRepository.findByIdComplete(user_id);
+    const user = await this.userRepository.findByIdCompleteRelations(user_id);
 
     if (!user) {
       throw new AppError("User not found!", 404);

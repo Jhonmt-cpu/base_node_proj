@@ -1,12 +1,14 @@
 import dayjs from "dayjs";
-import utc from "dayjs/plugin/utc";
-import timezone from "dayjs/plugin/timezone";
 
-import { IDateProvider } from "../IDateProvider";
+import { IDateProvider, IStartDateEndDate } from "../IDateProvider";
 
 class DayjsDateProvider implements IDateProvider {
-  convertToBrazilianUTC(date: Date): Date {
-    return dayjs(date).toDate();
+  dateNow(): Date {
+    return dayjs().toDate();
+  }
+
+  getDifferenceInYears({ start_date, end_date }: IStartDateEndDate): number {
+    return dayjs(end_date).diff(start_date, "year");
   }
 }
 

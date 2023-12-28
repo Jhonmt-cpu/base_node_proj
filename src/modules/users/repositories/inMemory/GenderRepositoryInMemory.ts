@@ -46,6 +46,14 @@ class GenderRepositoryInMemory implements IGenderRepository {
 
     return gender;
   }
+
+  async findByName(gender_name: string): Promise<GenderEntity | undefined> {
+    const gender = this.databaseInMemory.genders.find(
+      (gender) => gender.gender_name === gender_name,
+    );
+
+    return gender;
+  }
 }
 
 export { GenderRepositoryInMemory };

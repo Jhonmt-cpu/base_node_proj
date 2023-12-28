@@ -74,16 +74,19 @@ describe("Get User Complete", () => {
       neighborhood_city_id: city.city_id,
     });
 
-    const user = await userRepository.create({
+    const user = {
       user_name: "user_test",
       user_email: "usertest@test.com",
       user_cpf: 12345678910,
       user_gender_id: gender.gender_id,
       user_password: "123456",
-    });
+      user_birth_date: new Date("2005-01-01"),
+    };
+
+    const userResponse = await userRepository.create(user);
 
     const address = await addressRepository.create({
-      user_address_id: user.user_id,
+      user_address_id: userResponse.user_id,
       address_zip_code: 12345678,
       address_street: "address_street_test",
       address_number: 123,
@@ -91,13 +94,20 @@ describe("Get User Complete", () => {
     });
 
     const phone = await phoneRepository.create({
-      user_phone_id: user.user_id,
+      user_phone_id: userResponse.user_id,
       phone_ddd: 34,
       phone_number: 123456789,
     });
 
+    const userWithRoleAndCpf = {
+      ...userResponse,
+      user_role_id: role.role_id,
+      user_cpf: user.user_cpf,
+      user_password: user.user_password,
+    };
+
     const userFlat = {
-      ...user,
+      ...userWithRoleAndCpf,
       ...address,
       ...phone,
       ...neighborhood,
@@ -110,7 +120,7 @@ describe("Get User Complete", () => {
     const userWithoutPassword = flatUserCompleteToUserWithoutPassword(userFlat);
 
     const userComplete = await getUserCompleteUseCase.execute({
-      user_id: user.user_id,
+      user_id: userResponse.user_id,
     });
 
     expect(userComplete).toEqual(userWithoutPassword);

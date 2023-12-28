@@ -1,19 +1,23 @@
-import { hash } from "bcryptjs";
 import { inject, injectable } from "tsyringe";
 
-import { userToUserResponse } from "@modules/users/mappers/userToUserResponse";
 import { IAddressRepository } from "@modules/users/repositories/IAddressRepository";
 import { IGenderRepository } from "@modules/users/repositories/IGenderRepository";
 import { INeighborhoodRepository } from "@modules/users/repositories/INeighborhoodRepository";
 import { IPhoneRepository } from "@modules/users/repositories/IPhoneRepository";
 import { IUserRepository } from "@modules/users/repositories/IUserRepository";
 import { ICreateUserDTO } from "@modules/users/@types/ICreateUserDTO";
+import { IDateProvider } from "@shared/container/providers/DateProvider/IDateProvider";
+import { IHashProvider } from "@shared/container/providers/HashProvider/IHashProvider";
 
 import { AppError } from "@shared/errors/AppError";
 
 @injectable()
 class CreateUserUseCase {
   constructor(
+    @inject("HashProvider")
+    private hashProvider: IHashProvider,
+    @inject("DateProvider")
+    private dateProvider: IDateProvider,
     @inject("GenderRepository")
     private genderRepository: IGenderRepository,
     @inject("NeighborhoodRepository")
@@ -32,9 +36,19 @@ class CreateUserUseCase {
     user_cpf,
     user_gender_id,
     user_password,
-    phone,
-    address,
+    user_birth_date,
+    user_phone: phone,
+    user_address: address,
   }: ICreateUserDTO) {
+    const differenceInYear = this.dateProvider.getDifferenceInYears({
+      start_date: user_birth_date,
+      end_date: this.dateProvider.dateNow(),
+    });
+
+    if (differenceInYear < 18 || differenceInYear > 120) {
+      throw new AppError("User age must be between 18 and 120");
+    }
+
     const genderExists = await this.genderRepository.findById(user_gender_id);
 
     if (!genderExists) {
@@ -77,7 +91,9 @@ class CreateUserUseCase {
       throw new AppError("User already exists", 400);
     }
 
-    const userPasswordHashed = await hash(user_password, 8);
+    const userPasswordHashed = await this.hashProvider.generateHash(
+      user_password,
+    );
 
     const user = await this.userRepository.create({
       user_name,
@@ -85,6 +101,7 @@ class CreateUserUseCase {
       user_email,
       user_password: userPasswordHashed,
       user_gender_id,
+      user_birth_date,
     });
 
     await this.phoneRepository.create({
@@ -102,9 +119,7 @@ class CreateUserUseCase {
       user_address_id: user.user_id,
     });
 
-    const userResponse = userToUserResponse(user);
-
-    return userResponse;
+    return user;
   }
 }
 

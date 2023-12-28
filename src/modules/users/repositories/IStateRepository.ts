@@ -9,6 +9,7 @@ type IStateRepository = {
   create(data: ICreateStateRepositoryDTO): Promise<StateEntity>;
   findById(id: number): Promise<StateEntity | undefined>;
   findAll(): Promise<StateEntity[]>;
+  findByName(state_name: string): Promise<StateEntity | undefined>;
 };
 
 export { IStateRepository, ICreateStateRepositoryDTO };

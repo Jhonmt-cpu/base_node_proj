@@ -4,11 +4,12 @@ type ICreateUserDTO = {
   user_password: string;
   user_cpf: number;
   user_gender_id: number;
-  phone: {
+  user_birth_date: Date;
+  user_phone: {
     phone_number: number;
     phone_ddd: number;
   };
-  address: {
+  user_address: {
     address_street: string;
     address_number: number;
     address_complement?: string;

@@ -1,6 +1,7 @@
 import {
   IAddressRepository,
-  ICreateAddressDTO,
+  ICreateAddressRepositoryDTO,
+  IUpdateAddressRepositoryDTO,
 } from "@modules/users/repositories/IAddressRepository";
 
 import { dbConnection } from "@shared/infra/database/knex";
@@ -8,7 +9,7 @@ import { dbConnection } from "@shared/infra/database/knex";
 import { AddressEntity } from "../entities/AddressEntity";
 
 class AddressRepository implements IAddressRepository {
-  async create(data: ICreateAddressDTO): Promise<AddressEntity> {
+  async create(data: ICreateAddressRepositoryDTO): Promise<AddressEntity> {
     const address = await dbConnection<AddressEntity>("tb_addresses")
       .insert({
         user_address_id: data.user_address_id,
@@ -32,6 +33,20 @@ class AddressRepository implements IAddressRepository {
       .first();
 
     return address;
+  }
+
+  async update({
+    user_address_id,
+    updateFields,
+  }: IUpdateAddressRepositoryDTO): Promise<AddressEntity | undefined> {
+    const address = await dbConnection<AddressEntity>("tb_addresses")
+      .update(updateFields)
+      .where({
+        user_address_id,
+      })
+      .returning("*");
+
+    return address[0];
   }
 }
 

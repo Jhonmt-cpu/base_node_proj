@@ -9,9 +9,19 @@ type ICreateAddressRepositoryDTO = {
   address_zip_code: number;
 };
 
+type IUpdateAddressRepositoryDTO = {
+  user_address_id: number;
+  updateFields: Partial<AddressEntity>;
+};
+
 type IAddressRepository = {
   create(data: ICreateAddressRepositoryDTO): Promise<AddressEntity>;
   findById(user_address_id: number): Promise<AddressEntity | undefined>;
+  update(data: IUpdateAddressRepositoryDTO): Promise<AddressEntity | undefined>;
 };
 
-export { IAddressRepository, ICreateAddressRepositoryDTO as ICreateAddressDTO };
+export {
+  IAddressRepository,
+  ICreateAddressRepositoryDTO,
+  IUpdateAddressRepositoryDTO,
+};

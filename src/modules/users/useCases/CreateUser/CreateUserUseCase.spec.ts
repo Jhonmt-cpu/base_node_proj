@@ -4,11 +4,18 @@ import { AddressRepositoryInMemory } from "@modules/users/repositories/inMemory/
 import { PhoneRepositoryInMemory } from "@modules/users/repositories/inMemory/PhoneRepositoryInMemory";
 import { UserRepositoryInMemory } from "@modules/users/repositories/inMemory/UserRepositoryInMemory";
 import { DatabaseInMemory } from "@modules/users/repositories/inMemory/DatabaseInMemory";
+import { DayjsDateProvider } from "@shared/container/providers/DateProvider/implementations/DayjsDateProvider";
+import { InMemoryHashProvider } from "@shared/container/providers/HashProvider/implementations/InMemoryHashProvider";
 
-import { CreateUserUseCase } from "./CreateUserUseCase";
 import { AppError } from "@shared/errors/AppError";
 
+import { CreateUserUseCase } from "./CreateUserUseCase";
+
 let databaseInMemory: DatabaseInMemory;
+
+let hashProvider: InMemoryHashProvider;
+
+let dateProvider: DayjsDateProvider;
 
 let genderRepository: GenderRepositoryInMemory;
 
@@ -25,6 +32,8 @@ let createUserUseCase: CreateUserUseCase;
 describe("Create User", () => {
   beforeEach(() => {
     databaseInMemory = new DatabaseInMemory();
+    hashProvider = new InMemoryHashProvider();
+    dateProvider = new DayjsDateProvider();
     genderRepository = new GenderRepositoryInMemory(databaseInMemory);
     neighborhoodRepository = new NeighborHoodRepositoryInMemory(
       databaseInMemory,
@@ -34,6 +43,8 @@ describe("Create User", () => {
     userRepository = new UserRepositoryInMemory(databaseInMemory);
 
     createUserUseCase = new CreateUserUseCase(
+      hashProvider,
+      dateProvider,
       genderRepository,
       neighborhoodRepository,
       addressRepository,
@@ -58,11 +69,12 @@ describe("Create User", () => {
       user_cpf: 12345678910,
       user_password: "123456",
       user_gender_id: gender.gender_id,
-      phone: {
+      user_birth_date: new Date("2005-01-01"),
+      user_phone: {
         phone_ddd: 34,
         phone_number: 123456789,
       },
-      address: {
+      user_address: {
         address_street: "street_test",
         address_number: 123,
         address_complement: "complement_test",
@@ -80,17 +92,63 @@ describe("Create User", () => {
     expect(user).toHaveProperty("user_id");
     expect(spyPhoneCreate).toHaveBeenCalledWith({
       user_phone_id: user.user_id,
-      phone_ddd: userData.phone.phone_ddd,
-      phone_number: userData.phone.phone_number,
+      phone_ddd: userData.user_phone.phone_ddd,
+      phone_number: userData.user_phone.phone_number,
     });
     expect(spyAddressCreate).toHaveBeenCalledWith({
       user_address_id: user.user_id,
-      address_street: userData.address.address_street,
-      address_number: userData.address.address_number,
-      address_complement: userData.address.address_complement,
-      address_neighborhood_id: userData.address.address_neighborhood_id,
-      address_zip_code: userData.address.address_zip_code,
+      address_street: userData.user_address.address_street,
+      address_number: userData.user_address.address_number,
+      address_complement: userData.user_address.address_complement,
+      address_neighborhood_id: userData.user_address.address_neighborhood_id,
+      address_zip_code: userData.user_address.address_zip_code,
     });
+  });
+
+  it("should not create a user with invalid birth date", async () => {
+    await expect(
+      createUserUseCase.execute({
+        user_name: "user_test",
+        user_email: "usertest@test.com",
+        user_cpf: 12345678910,
+        user_password: "123456",
+        user_birth_date: new Date(),
+        user_gender_id: 0,
+        user_phone: {
+          phone_ddd: 34,
+          phone_number: 123456789,
+        },
+        user_address: {
+          address_street: "street_test",
+          address_number: 123,
+          address_complement: "complement_test",
+          address_neighborhood_id: 0,
+          address_zip_code: 12345678,
+        },
+      }),
+    ).rejects.toEqual(new AppError("User age must be between 18 and 120"));
+
+    await expect(
+      createUserUseCase.execute({
+        user_name: "user_test",
+        user_email: "usertest@test.com",
+        user_cpf: 12345678910,
+        user_password: "123456",
+        user_birth_date: new Date("1900-01-01"),
+        user_gender_id: 0,
+        user_phone: {
+          phone_ddd: 34,
+          phone_number: 123456789,
+        },
+        user_address: {
+          address_street: "street_test",
+          address_number: 123,
+          address_complement: "complement_test",
+          address_neighborhood_id: 0,
+          address_zip_code: 12345678,
+        },
+      }),
+    ).rejects.toEqual(new AppError("User age must be between 18 and 120"));
   });
 
   it("should not create a user with invalid gender", async () => {
@@ -100,12 +158,13 @@ describe("Create User", () => {
         user_email: "usertest@test.com",
         user_cpf: 12345678910,
         user_password: "123456",
+        user_birth_date: new Date("2005-01-01"),
         user_gender_id: 0,
-        phone: {
+        user_phone: {
           phone_ddd: 34,
           phone_number: 123456789,
         },
-        address: {
+        user_address: {
           address_street: "street_test",
           address_number: 123,
           address_complement: "complement_test",
@@ -128,11 +187,12 @@ describe("Create User", () => {
         user_cpf: 12345678910,
         user_password: "123456",
         user_gender_id: gender.gender_id,
-        phone: {
+        user_birth_date: new Date("2005-01-01"),
+        user_phone: {
           phone_ddd: 34,
           phone_number: 123456789,
         },
-        address: {
+        user_address: {
           address_street: "street_test",
           address_number: 123,
           address_complement: "complement_test",
@@ -158,6 +218,7 @@ describe("Create User", () => {
       user_email: "usertest@test.com",
       user_cpf: 12345678910,
       user_password: "123456",
+      user_birth_date: new Date("2005-01-01"),
       user_gender_id: gender.gender_id,
     });
 
@@ -173,12 +234,13 @@ describe("Create User", () => {
         user_email: "usertest@test.com",
         user_cpf: 12345678910,
         user_password: "123456",
+        user_birth_date: new Date("2005-01-01"),
         user_gender_id: gender.gender_id,
-        phone: {
+        user_phone: {
           phone_ddd: 34,
           phone_number: 123456789,
         },
-        address: {
+        user_address: {
           address_street: "street_test",
           address_number: 123,
           address_complement: "complement_test",
@@ -199,13 +261,16 @@ describe("Create User", () => {
       neighborhood_city_id: 1,
     });
 
-    const user = await userRepository.create({
+    const user = {
       user_name: "user_test",
       user_email: "usertest@test.com",
       user_cpf: 12345678910,
+      user_birth_date: new Date("2005-01-01"),
       user_password: "123456",
       user_gender_id: gender.gender_id,
-    });
+    };
+
+    await userRepository.create(user);
 
     await expect(
       createUserUseCase.execute({
@@ -214,11 +279,12 @@ describe("Create User", () => {
         user_cpf: 10987654321,
         user_password: "123456",
         user_gender_id: gender.gender_id,
-        phone: {
+        user_birth_date: new Date("2005-01-01"),
+        user_phone: {
           phone_ddd: 34,
           phone_number: 123456789,
         },
-        address: {
+        user_address: {
           address_street: "street_test",
           address_number: 123,
           address_complement: "complement_test",
@@ -235,11 +301,12 @@ describe("Create User", () => {
         user_cpf: user.user_cpf,
         user_password: "123456",
         user_gender_id: gender.gender_id,
-        phone: {
+        user_birth_date: new Date("2005-01-01"),
+        user_phone: {
           phone_ddd: 34,
           phone_number: 123456789,
         },
-        address: {
+        user_address: {
           address_street: "street_test",
           address_number: 123,
           address_complement: "complement_test",
@@ -256,11 +323,12 @@ describe("Create User", () => {
         user_cpf: user.user_cpf,
         user_password: "123456",
         user_gender_id: gender.gender_id,
-        phone: {
+        user_birth_date: new Date("2005-01-01"),
+        user_phone: {
           phone_ddd: 34,
           phone_number: 123456789,
         },
-        address: {
+        user_address: {
           address_street: "street_test",
           address_number: 123,
           address_complement: "complement_test",

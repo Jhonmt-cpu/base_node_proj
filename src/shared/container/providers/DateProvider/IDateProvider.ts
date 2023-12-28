@@ -1,5 +1,11 @@
-type IDateProvider = {
-  convertToBrazilianUTC(date: Date): Date;
+type IStartDateEndDate = {
+  start_date: Date;
+  end_date: Date;
 };
 
-export { IDateProvider };
+type IDateProvider = {
+  dateNow(): Date;
+  getDifferenceInYears(data: IStartDateEndDate): number;
+};
+
+export { IDateProvider, IStartDateEndDate };

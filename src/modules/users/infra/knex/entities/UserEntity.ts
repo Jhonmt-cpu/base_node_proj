@@ -14,6 +14,8 @@ class UserEntity {
 
   user_cpf: number;
 
+  user_birth_date: Date;
+
   user_gender_id: number;
 
   user_gender?: GenderEntity;
@@ -36,6 +38,7 @@ class UserEntity {
     this.user_email = props.user_email;
     this.user_password = props.user_password;
     this.user_cpf = props.user_cpf;
+    this.user_birth_date = props.user_birth_date;
     this.user_gender_id = props.user_gender_id;
     this.user_gender = props.user_gender;
     this.user_phone = props.user_phone;

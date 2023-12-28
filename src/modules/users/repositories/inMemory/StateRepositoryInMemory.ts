@@ -30,6 +30,14 @@ class StateRepositoryInMemory implements IStateRepository {
   async findById(id: number): Promise<StateEntity | undefined> {
     return this.databaseInMemory.states.find((state) => state.state_id === id);
   }
+
+  async findByName(state_name: string): Promise<StateEntity | undefined> {
+    const state = this.databaseInMemory.states.find(
+      (state) => state.state_name === state_name,
+    );
+
+    return state;
+  }
 }
 
 export { StateRepositoryInMemory };

@@ -3,6 +3,7 @@ import { dbConnection } from "@shared/infra/database/knex";
 import {
   ICityRepository,
   ICreateCityRepositoryDTO,
+  IFindByNameAndStateRepositoryDTO,
   IFindCitiesByStateRepositoryDTO,
 } from "@modules/users/repositories/ICityRepository";
 
@@ -36,6 +37,20 @@ class CityRepository implements ICityRepository {
       .select("*")
       .where({
         city_id: id,
+      })
+      .first();
+
+    return city;
+  }
+
+  async findByNameAndState(
+    data: IFindByNameAndStateRepositoryDTO,
+  ): Promise<CityEntity | undefined> {
+    const city = await dbConnection<CityEntity>("tb_cities")
+      .select("*")
+      .where({
+        city_name: data.city_name,
+        city_state_id: data.city_state_id,
       })
       .first();
 

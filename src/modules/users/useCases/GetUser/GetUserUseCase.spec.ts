@@ -26,6 +26,7 @@ describe("Get User", () => {
       user_password: "1234",
       user_cpf: 123456789,
       user_gender_id: 1,
+      user_birth_date: new Date("2005-01-01"),
     });
 
     const user = await getUserUseCase.execute({

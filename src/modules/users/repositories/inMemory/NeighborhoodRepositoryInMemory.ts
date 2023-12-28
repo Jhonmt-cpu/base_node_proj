@@ -3,6 +3,7 @@ import { NeighborhoodEntity } from "@modules/users/infra/knex/entities/Neighborh
 import {
   INeighborhoodRepository,
   ICreateNeighborhoodRepositoryDTO,
+  IFindNeighborhoodByNameAndCityRepositoryDTO,
 } from "../INeighborhoodRepository";
 
 import { DatabaseInMemory } from "./DatabaseInMemory";
@@ -38,6 +39,21 @@ class NeighborHoodRepositoryInMemory implements INeighborhoodRepository {
   ): Promise<NeighborhoodEntity | undefined> {
     const neighborhood = this.databaseInMemory.neighborhoods.find(
       (neighborhood) => neighborhood.neighborhood_id === neighborhood_id,
+    );
+
+    return neighborhood;
+  }
+
+  async findByNameAndCity({
+    neighborhood_city_id,
+    neighborhood_name,
+  }: IFindNeighborhoodByNameAndCityRepositoryDTO): Promise<
+    NeighborhoodEntity | undefined
+  > {
+    const neighborhood = this.databaseInMemory.neighborhoods.find(
+      (neighborhood) =>
+        neighborhood.neighborhood_name === neighborhood_name &&
+        neighborhood.neighborhood_city_id === neighborhood_city_id,
     );
 
     return neighborhood;

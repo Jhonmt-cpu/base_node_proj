@@ -1,6 +1,7 @@
 import {
   ICreatePhoneRepositoryDTO,
   IPhoneRepository,
+  IUpdatePhoneRepositoryDTO,
 } from "@modules/users/repositories/IPhoneRepository";
 
 import { dbConnection } from "@shared/infra/database/knex";
@@ -33,6 +34,31 @@ class PhoneRepository implements IPhoneRepository {
       .first();
 
     return phone;
+  }
+
+  async findById(user_phone_id: number): Promise<PhoneEntity | undefined> {
+    const phone = await dbConnection<PhoneEntity>("tb_phones")
+      .select("*")
+      .where({
+        user_phone_id,
+      })
+      .first();
+
+    return phone;
+  }
+
+  async update({
+    user_phone_id,
+    updateFields,
+  }: IUpdatePhoneRepositoryDTO): Promise<PhoneEntity> {
+    const phone = await dbConnection<PhoneEntity>("tb_phones")
+      .update(updateFields)
+      .where({
+        user_phone_id,
+      })
+      .returning("*");
+
+    return phone[0];
   }
 }
 

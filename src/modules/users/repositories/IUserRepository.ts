@@ -13,11 +13,29 @@ type ICreateUserRepositoryDTO = {
   user_password: string;
   user_cpf: number;
   user_gender_id: number;
+  user_birth_date: Date;
 };
+
+type IUserWithoutPasswordRepositoryDTO = Omit<UserEntity, "user_password">;
+
+type IUserCreateResponseRepositoryDTO = Omit<
+  UserEntity,
+  "user_cpf" | "user_password" | "user_role_id"
+>;
 
 type IFindUserByEmailOrCpfRepositoryDTO = {
   user_email: string;
   user_cpf: number;
+};
+
+type IFindAllUsersPaginatedRepositoryDTO = {
+  page: number;
+  limit: number;
+};
+
+type IUpdateUserRepositoryDTO = {
+  user_id: number;
+  updateFields: Partial<UserEntity>;
 };
 
 type IFlatUserCompleteResponseRepositoryDTO = UserEntity &
@@ -30,15 +48,27 @@ type IFlatUserCompleteResponseRepositoryDTO = UserEntity &
   GenderEntity;
 
 type IUserRepository = {
-  create(data: ICreateUserRepositoryDTO): Promise<UserEntity>;
+  create(
+    data: ICreateUserRepositoryDTO,
+  ): Promise<IUserCreateResponseRepositoryDTO>;
   findByEmailOrCpf(
     data: IFindUserByEmailOrCpfRepositoryDTO,
-  ): Promise<UserEntity | undefined>;
+  ): Promise<IUserWithoutPasswordRepositoryDTO | undefined>;
   findById(user_id: number): Promise<UserEntity | undefined>;
-  findByIdWithAddressAndPhone(user_id: number): Promise<UserEntity | undefined>;
-  findByIdComplete(
+  findByEmail(user_email: string): Promise<UserEntity | undefined>;
+  findByIdWithoutPassword(
+    user_id: number,
+  ): Promise<IUserWithoutPasswordRepositoryDTO | undefined>;
+  findByIdCompleteRelations(
     user_id: number,
   ): Promise<IFlatUserCompleteResponseRepositoryDTO | undefined>;
+  findAllPaginated(
+    data: IFindAllUsersPaginatedRepositoryDTO,
+  ): Promise<IUserWithoutPasswordRepositoryDTO[]>;
+  update(
+    data: IUpdateUserRepositoryDTO,
+  ): Promise<IUserCreateResponseRepositoryDTO | undefined>;
+  deleteById(user_id: number): Promise<void>;
 };
 
 export {
@@ -46,4 +76,8 @@ export {
   ICreateUserRepositoryDTO,
   IFindUserByEmailOrCpfRepositoryDTO,
   IFlatUserCompleteResponseRepositoryDTO,
+  IFindAllUsersPaginatedRepositoryDTO,
+  IUserWithoutPasswordRepositoryDTO,
+  IUserCreateResponseRepositoryDTO,
+  IUpdateUserRepositoryDTO,
 };

@@ -12,6 +12,7 @@ function flatUserCompleteToUserWithoutPassword(
     user_email: flatUserComplete.user_email,
     user_cpf: flatUserComplete.user_cpf,
     user_role_id: flatUserComplete.user_role_id,
+    user_birth_date: flatUserComplete.user_birth_date,
     user_gender_id: flatUserComplete.user_gender_id,
     phone: {
       user_phone_id: flatUserComplete.user_phone_id,

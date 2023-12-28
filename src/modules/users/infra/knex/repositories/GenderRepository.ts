@@ -47,6 +47,17 @@ class GenderRepository implements IGenderRepository {
 
     return gender;
   }
+
+  async findByName(gender_name: string): Promise<GenderEntity | undefined> {
+    const gender = await dbConnection<GenderEntity>("tb_genders")
+      .select("*")
+      .where({
+        gender_name,
+      })
+      .first();
+
+    return gender;
+  }
 }
 
 export { GenderRepository };

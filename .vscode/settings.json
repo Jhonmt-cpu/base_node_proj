@@ -7,5 +7,6 @@
     "TINYINT",
     "tsyringe",
     "unmocked"
-  ]
+  ],
+  "liveServer.settings.port": 5501
 }

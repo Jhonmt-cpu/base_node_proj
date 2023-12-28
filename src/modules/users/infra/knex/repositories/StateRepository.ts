@@ -34,6 +34,17 @@ class StateRepository implements IStateRepository {
 
     return state;
   }
+
+  async findByName(state_name: string): Promise<StateEntity | undefined> {
+    const state = await dbConnection<StateEntity>("tb_states")
+      .select("*")
+      .where({
+        state_name: state_name,
+      })
+      .first();
+
+    return state;
+  }
 }
 
 export { StateRepository };

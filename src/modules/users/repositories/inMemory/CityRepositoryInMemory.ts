@@ -3,6 +3,7 @@ import { CityEntity } from "@modules/users/infra/knex/entities/CityEntity";
 import {
   ICityRepository,
   ICreateCityRepositoryDTO,
+  IFindByNameAndStateRepositoryDTO,
   IFindCitiesByStateRepositoryDTO,
 } from "../ICityRepository";
 
@@ -36,6 +37,18 @@ class CityRepositoryInMemory implements ICityRepository {
   async findById(id: number): Promise<CityEntity | undefined> {
     const city = this.databaseInMemory.cities.find(
       (city) => city.city_id === id,
+    );
+
+    return city;
+  }
+
+  async findByNameAndState(
+    data: IFindByNameAndStateRepositoryDTO,
+  ): Promise<CityEntity | undefined> {
+    const city = this.databaseInMemory.cities.find(
+      (city) =>
+        city.city_name === data.city_name &&
+        city.city_state_id === data.city_state_id,
     );
 
     return city;
