@@ -6,6 +6,10 @@ type IStartDateEndDate = {
 type IDateProvider = {
   dateNow(): Date;
   getDifferenceInYears(data: IStartDateEndDate): number;
+  getDifferenceInSeconds(data: IStartDateEndDate): number;
+  addDays(days: number): Date;
+  addSeconds(seconds: number): Date;
+  isBeforeNow(date: Date): boolean;
 };
 
 export { IDateProvider, IStartDateEndDate };

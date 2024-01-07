@@ -10,6 +10,22 @@ class DayjsDateProvider implements IDateProvider {
   getDifferenceInYears({ start_date, end_date }: IStartDateEndDate): number {
     return dayjs(end_date).diff(start_date, "year");
   }
+
+  addDays(days: number): Date {
+    return dayjs().add(days, "day").toDate();
+  }
+
+  addSeconds(seconds: number): Date {
+    return dayjs().add(seconds, "second").toDate();
+  }
+
+  isBeforeNow(date: Date): boolean {
+    return dayjs(date).isBefore(dayjs());
+  }
+
+  getDifferenceInSeconds({ start_date, end_date }: IStartDateEndDate): number {
+    return dayjs(end_date).diff(start_date, "second");
+  }
 }
 
 export { DayjsDateProvider };

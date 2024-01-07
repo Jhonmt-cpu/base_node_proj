@@ -1,3 +1,5 @@
 import "./providers";
 
-import "@modules/users/container";
+import "@modules/account/container";
+
+import "@modules/auth/container";

@@ -1,10 +1,13 @@
 import { Router } from "express";
 
-import { userRouter } from "@modules/users/infra/http/routes";
+import { accountRouter } from "@modules/account/infra/http/routes";
+import { authRouter } from "@modules/auth/infra/http/routes";
 
 const router = Router();
 
-router.use(userRouter);
+router.use("/account", accountRouter);
+
+router.use("/auth", authRouter);
 
 router.get("/", (request, response) => {
   return response.json({ message: "Hello World" });

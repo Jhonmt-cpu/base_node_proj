@@ -1,4 +1,5 @@
 import { compare, hash } from "bcryptjs";
+
 import { IHashProvider } from "../IHashProvider";
 
 class BcryptjsHashProvider implements IHashProvider {
