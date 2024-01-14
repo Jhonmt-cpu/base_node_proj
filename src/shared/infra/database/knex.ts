@@ -1,15 +1,12 @@
 import knex from "knex";
 
-const dbConnection = knex({
-  client: "pg",
-  connection: {
-    host: process.env.POSTGRES_HOST,
-    user: process.env.POSTGRES_USER,
-    password: process.env.POSTGRES_PASSWORD,
-    port: Number(process.env.POSTGRES_PORT),
-    database: process.env.POSTGRES_DB,
-    timezone: process.env.TZ,
-  },
-});
+import config from "./knexfile";
+
+const dbConnection = knex(config[process.env.NODE_ENV || "development"]);
+
+dbConnection
+  .raw("SELECT 1")
+  .then(() => console.log("Database connection successful"))
+  .catch((error) => console.error("Database connection error:", error));
 
 export { dbConnection };

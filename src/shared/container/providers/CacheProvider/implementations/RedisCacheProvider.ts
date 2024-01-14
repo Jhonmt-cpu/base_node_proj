@@ -1,14 +1,24 @@
-import Redis from "ioredis";
+import Redis, { RedisOptions } from "ioredis";
 
 import { ICacheProvider, ICacheSet } from "../ICacheProvider";
 
-class RedisCacheProvider implements ICacheProvider {
-  private redisClient = new Redis({
+const options: { [key: string]: RedisOptions } = {
+  test: {
+    host: process.env.REDIS_CACHE_HOST_TEST,
+    port: Number(process.env.REDIS_CACHE_PORT_TEST),
+    password: process.env.REDIS_CACHE_PASSWORD_TEST,
+    username: process.env.REDIS_CACHE_USER_TEST,
+  },
+  prod: {
     host: process.env.REDIS_CACHE_HOST,
     port: Number(process.env.REDIS_CACHE_PORT),
     password: process.env.REDIS_CACHE_PASSWORD,
     username: process.env.REDIS_CACHE_USER,
-  });
+  },
+};
+
+class RedisCacheProvider implements ICacheProvider {
+  private redisClient = new Redis(options[process.env.NODE_ENV || "prod"]);
 
   async cacheSet({ key, value, expiresInSeconds }: ICacheSet): Promise<void> {
     await this.redisClient.set(key, value, "EX", expiresInSeconds);

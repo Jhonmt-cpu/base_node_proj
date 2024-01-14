@@ -2,64 +2,52 @@ import dotenv from "dotenv";
 import type { Knex } from "knex";
 import path from "path";
 
-dotenv.config({ path: path.resolve(__dirname, "../../../../.env") });
+dotenv.config({
+  path: path.resolve(__dirname, "..", "..", "..", "..", ".env"),
+});
 
-// Update with your config settings.
-
-const config: { [key: string]: Knex.Config } = {
-  development: {
-    client: "postgresql",
-    connection: {
-      host: process.env.POSTGRES_HOST,
-      user: process.env.POSTGRES_USER,
-      password: process.env.POSTGRES_PASSWORD,
-      port: Number(process.env.POSTGRES_PORT),
-      database: process.env.POSTGRES_DB,
-    },
-    pool: {
-      min: 2,
-      max: 10,
-    },
-    migrations: {
-      tableName: "knex_migrations",
-    },
+const normalConfig: Knex.Config = {
+  client: "postgresql",
+  connection: {
+    host: process.env.POSTGRES_HOST,
+    user: process.env.POSTGRES_USER,
+    password: process.env.POSTGRES_PASSWORD,
+    port: Number(process.env.POSTGRES_PORT),
+    database: process.env.POSTGRES_DB,
+    timezone: process.env.TZ,
   },
-
-  staging: {
-    client: "postgresql",
-    connection: {
-      host: process.env.POSTGRES_HOST,
-      user: process.env.POSTGRES_USER,
-      password: process.env.POSTGRES_PASSWORD,
-      port: Number(process.env.POSTGRES_PORT),
-      database: process.env.POSTGRES_DB,
-    },
-    pool: {
-      min: 2,
-      max: 10,
-    },
-    migrations: {
-      tableName: "knex_migrations",
-    },
+  migrations: {
+    tableName: "knex_migrations",
+    directory: path.resolve(__dirname, "migrations"),
   },
-
-  production: {
-    client: "postgresql",
-    connection: {
-      host: process.env.POSTGRES_HOST,
-      user: process.env.POSTGRES_USER,
-      password: process.env.POSTGRES_PASSWORD,
-      port: Number(process.env.POSTGRES_PORT),
-      database: process.env.POSTGRES_DB,
-    },
-    pool: {
-      min: 2,
-      max: 10,
-    },
-    migrations: {
-      tableName: "knex_migrations",
-    },
+  seeds: {
+    directory: path.resolve(__dirname, "seeds", "prod"),
   },
 };
 
-module.exports = config;
+const testConfig: Knex.Config = {
+  client: "postgresql",
+  connection: {
+    host: process.env.POSTGRES_HOST_TEST,
+    user: process.env.POSTGRES_USER_TEST,
+    password: process.env.POSTGRES_PASSWORD_TEST,
+    port: Number(process.env.POSTGRES_PORT_TEST),
+    database: process.env.POSTGRES_DB_TEST,
+  },
+  migrations: {
+    tableName: "knex_migrations",
+    directory: path.resolve(__dirname, "migrations"),
+  },
+  seeds: {
+    directory: path.resolve(__dirname, "seeds", "test"),
+  },
+};
+
+const config: { [key: string]: Knex.Config } = {
+  test: testConfig,
+  development: normalConfig,
+  staging: normalConfig,
+  production: normalConfig,
+};
+
+export default config;

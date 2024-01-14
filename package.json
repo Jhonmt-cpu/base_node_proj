@@ -12,7 +12,10 @@
     "migrate:latest": "TZ='America/Brasilia' knex --knexfile src/shared/infra/database/knexfile.ts migrate:latest",
     "migrate:down": "TZ='America/Brasilia' knex --knexfile src/shared/infra/database/knexfile.ts migrate:down",
     "seed:make": "TZ='America/Brasilia' knex --knexfile src/shared/infra/database/knexfile.ts seed:make",
-    "test": "TZ='America/Brasilia' jest --runInBand --detectOpenHandles --forceExit"
+    "seed:make_test": "TZ='America/Brasilia' NODE_ENV=test knex --knexfile src/shared/infra/database/knexfile.ts seed:make",
+    "test": "TZ='America/Brasilia' NODE_ENV=test jest --runInBand --detectOpenHandles --forceExit",
+    "test:usecase": "TZ='America/Brasilia' NODE_ENV=test jest --testPathPattern=UseCase.spec.ts$ --runInBand --detectOpenHandles --forceExit",
+    "test:controller": "TZ='America/Brasilia' NODE_ENV=test jest --testPathPattern=Controller.spec.ts$ --runInBand --detectOpenHandles --forceExit"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",
