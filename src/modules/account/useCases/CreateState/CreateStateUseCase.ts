@@ -1,7 +1,10 @@
+import { inject, injectable } from "tsyringe";
+
 import { ICreateStateDTO } from "@modules/account/@types/ICreateStateDTO";
 import { IStateRepository } from "@modules/account/repositories/IStateRepository";
+
 import { AppError } from "@shared/errors/AppError";
-import { inject, injectable } from "tsyringe";
+import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
 
 @injectable()
 class CreateStateUseCase {
@@ -16,7 +19,7 @@ class CreateStateUseCase {
     );
 
     if (stateAlreadyExists) {
-      throw new AppError("State already exists!");
+      throw new AppError(AppErrorMessages.STATE_ALREADY_EXISTS);
     }
 
     const state = await this.stateRepository.create({

@@ -10,6 +10,7 @@ import { IDateProvider } from "@shared/container/providers/DateProvider/IDatePro
 import { IHashProvider } from "@shared/container/providers/HashProvider/IHashProvider";
 
 import { AppError } from "@shared/errors/AppError";
+import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
 
 @injectable()
 class CreateUserUseCase {
@@ -46,13 +47,13 @@ class CreateUserUseCase {
     });
 
     if (differenceInYear < 18 || differenceInYear > 120) {
-      throw new AppError("User age must be between 18 and 120");
+      throw new AppError(AppErrorMessages.USER_INVALID_AGE);
     }
 
     const genderExists = await this.genderRepository.findById(user_gender_id);
 
     if (!genderExists) {
-      throw new AppError("Invalid Gender", 404);
+      throw new AppError(AppErrorMessages.GENDER_NOT_FOUND, 404);
     }
 
     const {
@@ -68,7 +69,7 @@ class CreateUserUseCase {
     );
 
     if (!neighborhoodExists) {
-      throw new AppError("Invalid Neighborhood", 404);
+      throw new AppError(AppErrorMessages.NEIGHBORHOOD_NOT_FOUND, 404);
     }
 
     const { phone_ddd, phone_number } = phone;
@@ -79,7 +80,7 @@ class CreateUserUseCase {
     });
 
     if (phoneAlreadyExists) {
-      throw new AppError("Phone already exists", 400);
+      throw new AppError(AppErrorMessages.USER_PHONE_ALREADY_EXISTS, 400);
     }
 
     const userAlreadyExists = await this.userRepository.findByEmailOrCpf({
@@ -88,7 +89,7 @@ class CreateUserUseCase {
     });
 
     if (userAlreadyExists) {
-      throw new AppError("User already exists", 400);
+      throw new AppError(AppErrorMessages.USER_ALREADY_EXISTS, 400);
     }
 
     const userPasswordHashed = await this.hashProvider.generateHash(

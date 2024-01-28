@@ -3,6 +3,7 @@ import { inject, injectable } from "tsyringe";
 import { IUserRepository } from "@modules/account/repositories/IUserRepository";
 import { IFindUserByIdDTO } from "@modules/account/@types/IFindUserByIdDTO";
 import { AppError } from "@shared/errors/AppError";
+import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
 
 @injectable()
 class GetUserUseCase {
@@ -15,7 +16,7 @@ class GetUserUseCase {
     const user = await this.userRepository.findByIdWithoutPassword(user_id);
 
     if (!user) {
-      throw new AppError("User not found!", 404);
+      throw new AppError(AppErrorMessages.USER_NOT_FOUND, 404);
     }
 
     return user;

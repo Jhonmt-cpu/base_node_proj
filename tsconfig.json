@@ -10,9 +10,6 @@
     "rootDir": "./",
     "baseUrl": "./src",
     "paths": {
-      "@global/*": [
-        "global/*"
-      ],
       "@modules/*": [
         "modules/*"
       ],

@@ -4,6 +4,7 @@ import { IFindUserAddressByIdDTO } from "@modules/account/@types/IFindUserAddres
 import { IAddressRepository } from "@modules/account/repositories/IAddressRepository";
 
 import { AppError } from "@shared/errors/AppError";
+import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
 
 @injectable()
 class GetUserAddressUseCase {
@@ -16,7 +17,7 @@ class GetUserAddressUseCase {
     const address = await this.addressRepository.findById(user_address_id);
 
     if (!address) {
-      throw new AppError("Address not found!", 404);
+      throw new AppError(AppErrorMessages.USER_ADDRESS_NOT_FOUND, 404);
     }
 
     return address;

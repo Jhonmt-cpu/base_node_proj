@@ -7,6 +7,7 @@ import { ICacheProvider } from "@shared/container/providers/CacheProvider/ICache
 import auth from "@config/auth";
 
 import { AppError } from "@shared/errors/AppError";
+import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
 
 @injectable()
 class RefreshTokenUseCase {
@@ -23,7 +24,7 @@ class RefreshTokenUseCase {
     );
 
     if (!tokenCache) {
-      throw new AppError("Refresh token not found", 404);
+      throw new AppError(AppErrorMessages.REFRESH_TOKEN_NOT_FOUND, 404);
     }
 
     const { user_id, user_name, user_role } = JSON.parse(tokenCache);

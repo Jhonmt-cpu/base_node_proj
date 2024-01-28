@@ -1,4 +1,4 @@
-import { DatabaseInMemory } from "@global/repositories/inMemory/DatabaseInMemory";
+import { DatabaseInMemory } from "@shared/repositories/inMemory/DatabaseInMemory";
 
 import { UserEntity } from "@modules/account/infra/knex/entities/UserEntity";
 
@@ -237,6 +237,23 @@ class UserRepositoryInMemory implements IUserRepository {
     );
 
     this.databaseInMemory.users.splice(userIndex, 1);
+
+    const addressIndex = this.databaseInMemory.addresses.findIndex(
+      (address) => address.user_address_id === user_id,
+    );
+
+    this.databaseInMemory.addresses.splice(addressIndex, 1);
+
+    const phoneIndex = this.databaseInMemory.phones.findIndex(
+      (phone) => phone.user_phone_id === user_id,
+    );
+
+    this.databaseInMemory.phones.splice(phoneIndex, 1);
+
+    this.databaseInMemory.refresh_tokens =
+      this.databaseInMemory.refresh_tokens.filter(
+        (refreshToken) => refreshToken.refresh_token_user_id !== user_id,
+      );
   }
 
   async update({

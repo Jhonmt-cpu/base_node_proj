@@ -9,9 +9,10 @@ import { IUserRepository } from "@modules/account/repositories/IUserRepository";
 
 import { IDateProvider } from "@shared/container/providers/DateProvider/IDateProvider";
 import { IHashProvider } from "@shared/container/providers/HashProvider/IHashProvider";
-
-import { AppError } from "@shared/errors/AppError";
 import { ICacheProvider } from "@shared/container/providers/CacheProvider/ICacheProvider";
+
+import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
+import { AppError } from "@shared/errors/AppError";
 
 @injectable()
 class LoginUseCase {
@@ -34,7 +35,7 @@ class LoginUseCase {
     const user = await this.userRepository.findByEmailWithRole(user_email);
 
     if (!user) {
-      throw new AppError("Incorrect email or password");
+      throw new AppError(AppErrorMessages.INCORRECT_EMAIL_OR_PASSWORD);
     }
 
     const passwordMatch = await this.hashProvider.compareHash(
@@ -43,7 +44,7 @@ class LoginUseCase {
     );
 
     if (!passwordMatch) {
-      throw new AppError("Incorrect email or password");
+      throw new AppError(AppErrorMessages.INCORRECT_EMAIL_OR_PASSWORD);
     }
 
     const token = await this.generateTokenProvider.generateToken({

@@ -1,10 +1,11 @@
-import { DatabaseInMemory } from "@global/repositories/inMemory/DatabaseInMemory";
+import { DatabaseInMemory } from "@shared/repositories/inMemory/DatabaseInMemory";
 
 import { UserRepositoryInMemory } from "@modules/account/repositories/inMemory/UserRepositoryInMemory";
 
 import { AppError } from "@shared/errors/AppError";
 
 import { GetUserUseCase } from "./GetUserUseCase";
+import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
 
 let databaseInMemory: DatabaseInMemory;
 
@@ -44,6 +45,6 @@ describe("Get User", () => {
       getUserUseCase.execute({
         user_id: 1,
       }),
-    ).rejects.toEqual(new AppError("User not found!", 404));
+    ).rejects.toEqual(new AppError(AppErrorMessages.USER_NOT_FOUND, 404));
   });
 });

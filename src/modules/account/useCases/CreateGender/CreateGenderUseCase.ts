@@ -2,7 +2,9 @@ import { inject, injectable } from "tsyringe";
 
 import { ICreateGenderDTO } from "@modules/account/@types/ICreateGenderDTO";
 import { IGenderRepository } from "@modules/account/repositories/IGenderRepository";
+
 import { AppError } from "@shared/errors/AppError";
+import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
 
 @injectable()
 class CreateGenderUseCase {
@@ -17,7 +19,7 @@ class CreateGenderUseCase {
     );
 
     if (genderAlreadyExists) {
-      throw new AppError("Gender already exists!");
+      throw new AppError(AppErrorMessages.GENDER_ALREADY_EXISTS);
     }
 
     const gender = await this.genderRepository.create({

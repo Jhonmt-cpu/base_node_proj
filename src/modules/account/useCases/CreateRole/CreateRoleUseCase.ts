@@ -4,6 +4,7 @@ import { IRoleRepository } from "@modules/account/repositories/IRoleRepository";
 import { ICreateRoleDTO } from "@modules/account/@types/ICreateRoleDTO";
 
 import { AppError } from "@errors/AppError";
+import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
 
 @injectable()
 class CreateRoleUseCase {
@@ -16,7 +17,7 @@ class CreateRoleUseCase {
     const roleAlreadyExists = await this.roleRepository.findByName(role_name);
 
     if (roleAlreadyExists) {
-      throw new AppError("Role already exists!");
+      throw new AppError(AppErrorMessages.ROLE_ALREADY_EXISTS);
     }
 
     const role = await this.roleRepository.create({ role_name });

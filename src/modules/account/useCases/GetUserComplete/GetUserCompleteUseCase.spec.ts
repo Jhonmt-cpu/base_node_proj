@@ -1,4 +1,4 @@
-import { DatabaseInMemory } from "@global/repositories/inMemory/DatabaseInMemory";
+import { DatabaseInMemory } from "@shared/repositories/inMemory/DatabaseInMemory";
 
 import { AddressRepositoryInMemory } from "@modules/account/repositories/inMemory/AddressRepositoryInMemory";
 import { CityRepositoryInMemory } from "@modules/account/repositories/inMemory/CityRepositoryInMemory";
@@ -13,6 +13,7 @@ import { flatUserCompleteToUserWithoutPassword } from "@modules/account/mappers/
 import { AppError } from "@shared/errors/AppError";
 
 import { GetUserCompleteUseCase } from "./GetUserCompleteUseCase";
+import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
 
 let databaseInMemory: DatabaseInMemory;
 
@@ -132,6 +133,6 @@ describe("Get User Complete", () => {
       getUserCompleteUseCase.execute({
         user_id: 1,
       }),
-    ).rejects.toEqual(new AppError("User not found!", 404));
+    ).rejects.toEqual(new AppError(AppErrorMessages.USER_NOT_FOUND, 404));
   });
 });

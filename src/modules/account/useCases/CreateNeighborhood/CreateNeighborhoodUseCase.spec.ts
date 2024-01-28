@@ -1,9 +1,10 @@
-import { DatabaseInMemory } from "@global/repositories/inMemory/DatabaseInMemory";
+import { DatabaseInMemory } from "@shared/repositories/inMemory/DatabaseInMemory";
 
 import { CityRepositoryInMemory } from "@modules/account/repositories/inMemory/CityRepositoryInMemory";
 import { NeighborHoodRepositoryInMemory } from "@modules/account/repositories/inMemory/NeighborhoodRepositoryInMemory";
 
 import { AppError } from "@shared/errors/AppError";
+import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
 
 import { CreateNeighborhoodUseCase } from "./CreateNeighborhoodUseCase";
 
@@ -50,7 +51,7 @@ describe("Create Neighborhood", () => {
         neighborhood_name: "neighborhood_test",
         neighborhood_city_id: 1,
       }),
-    ).rejects.toEqual(new AppError("City not found!"));
+    ).rejects.toEqual(new AppError(AppErrorMessages.CITY_NOT_FOUND, 404));
   });
 
   it("Should not be able to create a neighborhood if name already exists", async () => {
@@ -69,6 +70,8 @@ describe("Create Neighborhood", () => {
         neighborhood_name: neighborhood.neighborhood_name,
         neighborhood_city_id: city.city_id,
       }),
-    ).rejects.toEqual(new AppError("Neighborhood already exists!"));
+    ).rejects.toEqual(
+      new AppError(AppErrorMessages.NEIGHBORHOOD_ALREADY_EXISTS),
+    );
   });
 });

@@ -6,6 +6,7 @@ import { IStateRepository } from "@modules/account/repositories/IStateRepository
 import { IFindCitiesByStateDTO } from "@modules/account/@types/IFindCitiesByStateDTO";
 
 import { AppError } from "@shared/errors/AppError";
+import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
 
 @injectable()
 class ListCitiesByStateUseCase {
@@ -17,14 +18,10 @@ class ListCitiesByStateUseCase {
   ) {}
 
   async execute({ state_id }: IFindCitiesByStateDTO): Promise<CityEntity[]> {
-    if (state_id <= 0) {
-      throw new AppError("Invalid state");
-    }
-
     const state = await this.stateRepository.findById(state_id);
 
     if (!state) {
-      throw new AppError("State not found", 404);
+      throw new AppError(AppErrorMessages.STATE_NOT_FOUND, 404);
     }
 
     const cities = await this.cityRepository.findByState({ state_id });

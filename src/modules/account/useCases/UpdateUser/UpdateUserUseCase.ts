@@ -14,6 +14,7 @@ import { PhoneEntity } from "@modules/account/infra/knex/entities/PhoneEntity";
 import { AddressEntity } from "@modules/account/infra/knex/entities/AddressEntity";
 
 import { AppError } from "@shared/errors/AppError";
+import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
 
 @injectable()
 class UpdateUserUseCase {
@@ -45,7 +46,7 @@ class UpdateUserUseCase {
     const user = await this.userRepository.findById(user_id);
 
     if (!user) {
-      throw new AppError("User not found", 404);
+      throw new AppError(AppErrorMessages.USER_NOT_FOUND, 404);
     }
 
     const passwordMatch = await this.hashProvider.compareHash(
@@ -54,7 +55,7 @@ class UpdateUserUseCase {
     );
 
     if (!passwordMatch) {
-      throw new AppError("Incorrect password", 401);
+      throw new AppError(AppErrorMessages.USER_INCORRECT_PASSWORD, 401);
     }
 
     const updateUserFields: Partial<UserEntity> = {};
@@ -69,7 +70,7 @@ class UpdateUserUseCase {
       );
 
       if (emailAlreadyExists && emailAlreadyExists.user_id !== user_id) {
-        throw new AppError("Email already in use");
+        throw new AppError(AppErrorMessages.USER_EMAIL_ALREADY_IN_USE);
       }
 
       updateUserFields.user_email = user_email;
@@ -87,7 +88,7 @@ class UpdateUserUseCase {
       const genderExists = await this.genderRepository.findById(user_gender_id);
 
       if (!genderExists) {
-        throw new AppError("Gender does not exists");
+        throw new AppError(AppErrorMessages.GENDER_NOT_FOUND);
       }
 
       updateUserFields.user_gender_id = user_gender_id;
@@ -102,13 +103,13 @@ class UpdateUserUseCase {
       });
 
       if (phoneAlreadyInUse && phoneAlreadyInUse.user_phone_id !== user_id) {
-        throw new AppError("Phone already in use");
+        throw new AppError(AppErrorMessages.USER_PHONE_ALREADY_IN_USE);
       }
 
       const currentUserPhone = await this.phoneRepository.findById(user_id);
 
       if (!currentUserPhone) {
-        throw new AppError("Phone not found", 404);
+        throw new AppError(AppErrorMessages.USER_PHONE_NOT_FOUND, 404);
       }
 
       if (currentUserPhone.phone_ddd !== user_phone.phone_ddd) {
@@ -131,7 +132,7 @@ class UpdateUserUseCase {
         );
 
         if (!currentUserAddress) {
-          throw new AppError("Address not found", 404);
+          throw new AppError(AppErrorMessages.USER_ADDRESS_NOT_FOUND, 404);
         }
 
         if (
@@ -167,7 +168,7 @@ class UpdateUserUseCase {
           );
 
           if (!neighborhoodExists) {
-            throw new AppError("Neighborhood does not exists", 404);
+            throw new AppError(AppErrorMessages.NEIGHBORHOOD_NOT_FOUND, 404);
           }
 
           updateAddressFields.address_neighborhood_id =

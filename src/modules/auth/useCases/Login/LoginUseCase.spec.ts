@@ -1,4 +1,4 @@
-import { DatabaseInMemory } from "@global/repositories/inMemory/DatabaseInMemory";
+import { DatabaseInMemory } from "@shared/repositories/inMemory/DatabaseInMemory";
 
 import { UserRepositoryInMemory } from "@modules/account/repositories/inMemory/UserRepositoryInMemory";
 import { InMemoryHashProvider } from "@shared/container/providers/HashProvider/implementations/InMemoryHashProvider";
@@ -12,6 +12,7 @@ import { InMemoryCacheProvider } from "@shared/container/providers/CacheProvider
 import { AppError } from "@shared/errors/AppError";
 
 import { LoginUseCase } from "./LoginUseCase";
+import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
 
 let hashProvider: InMemoryHashProvider;
 
@@ -122,7 +123,9 @@ describe("LoginUseCase", () => {
         user_email: "invalid_email",
         user_password: user.user_password,
       }),
-    ).rejects.toEqual(new AppError("Incorrect email or password"));
+    ).rejects.toEqual(
+      new AppError(AppErrorMessages.INCORRECT_EMAIL_OR_PASSWORD),
+    );
   });
 
   it("should not be able to login with invalid password", async () => {
@@ -146,7 +149,9 @@ describe("LoginUseCase", () => {
         user_email: user.user_email,
         user_password: "invalid_password",
       }),
-    ).rejects.toEqual(new AppError("Incorrect email or password"));
+    ).rejects.toEqual(
+      new AppError(AppErrorMessages.INCORRECT_EMAIL_OR_PASSWORD),
+    );
   });
 
   it("should remove old refresh tokens when login", async () => {

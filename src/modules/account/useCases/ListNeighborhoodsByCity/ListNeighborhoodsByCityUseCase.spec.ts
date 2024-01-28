@@ -1,9 +1,10 @@
-import { DatabaseInMemory } from "@global/repositories/inMemory/DatabaseInMemory";
+import { DatabaseInMemory } from "@shared/repositories/inMemory/DatabaseInMemory";
 
 import { CityRepositoryInMemory } from "@modules/account/repositories/inMemory/CityRepositoryInMemory";
 import { NeighborHoodRepositoryInMemory } from "@modules/account/repositories/inMemory/NeighborhoodRepositoryInMemory";
 
 import { AppError } from "@shared/errors/AppError";
+import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
 
 import { ListNeighborhoodsByCityUseCase } from "./ListNeighborhoodsByCityUseCase";
 
@@ -67,19 +68,6 @@ describe("List Cities By State", () => {
       listNeighborhoodsByCityUseCase.execute({
         city_id: 1,
       }),
-    ).rejects.toEqual(new AppError("City does not exists!", 404));
-  });
-
-  it("should not be able to list all cities by state if state id is less or equal to 0", async () => {
-    await expect(
-      listNeighborhoodsByCityUseCase.execute({
-        city_id: 0,
-      }),
-    ).rejects.toEqual(new AppError("Invalid city!"));
-    await expect(
-      listNeighborhoodsByCityUseCase.execute({
-        city_id: -1,
-      }),
-    ).rejects.toEqual(new AppError("Invalid city!"));
+    ).rejects.toEqual(new AppError(AppErrorMessages.CITY_NOT_FOUND, 404));
   });
 });

@@ -1,6 +1,6 @@
 import { v4 as uuid } from "uuid";
 
-import { DatabaseInMemory } from "@global/repositories/inMemory/DatabaseInMemory";
+import { DatabaseInMemory } from "@shared/repositories/inMemory/DatabaseInMemory";
 
 import { RefreshTokenEntity } from "@modules/auth/infra/knex/entities/RefreshTokenEntity";
 

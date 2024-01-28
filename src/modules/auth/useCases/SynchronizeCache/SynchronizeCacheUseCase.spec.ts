@@ -7,7 +7,7 @@ import { UserRepositoryInMemory } from "@modules/account/repositories/inMemory/U
 import { InMemoryCacheProvider } from "@shared/container/providers/CacheProvider/implementations/InMemoryCacheProvider";
 import { DayjsDateProvider } from "@shared/container/providers/DateProvider/implementations/DayjsDateProvider";
 
-import { DatabaseInMemory } from "@global/repositories/inMemory/DatabaseInMemory";
+import { DatabaseInMemory } from "@shared/repositories/inMemory/DatabaseInMemory";
 
 import { SynchronizeCacheUseCase } from "./SynchronizeCacheUseCase";
 import auth from "@config/auth";

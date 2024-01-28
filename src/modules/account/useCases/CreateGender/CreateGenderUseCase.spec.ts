@@ -1,8 +1,9 @@
-import { DatabaseInMemory } from "@global/repositories/inMemory/DatabaseInMemory";
+import { DatabaseInMemory } from "@shared/repositories/inMemory/DatabaseInMemory";
 
 import { GenderRepositoryInMemory } from "@modules/account/repositories/inMemory/GenderRepositoryInMemory";
 
 import { AppError } from "@shared/errors/AppError";
+import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
 
 import { CreateGenderUseCase } from "./CreateGenderUseCase";
 
@@ -38,6 +39,6 @@ describe("Create Gender", () => {
       createGenderUseCase.execute({
         gender_name: gender.gender_name,
       }),
-    ).rejects.toEqual(new AppError("Gender already exists!"));
+    ).rejects.toEqual(new AppError(AppErrorMessages.GENDER_ALREADY_EXISTS));
   });
 });

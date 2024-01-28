@@ -1,4 +1,4 @@
-import { DatabaseInMemory } from "@global/repositories/inMemory/DatabaseInMemory";
+import { DatabaseInMemory } from "@shared/repositories/inMemory/DatabaseInMemory";
 
 import { CityRepositoryInMemory } from "@modules/account/repositories/inMemory/CityRepositoryInMemory";
 import { StateRepositoryInMemory } from "@modules/account/repositories/inMemory/StateRepositoryInMemory";
@@ -6,6 +6,7 @@ import { StateRepositoryInMemory } from "@modules/account/repositories/inMemory/
 import { AppError } from "@shared/errors/AppError";
 
 import { ListCitiesByStateUseCase } from "./ListCitiesByStateUseCase";
+import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
 
 let databaseInMemory: DatabaseInMemory;
 
@@ -65,19 +66,6 @@ describe("List Cities By State", () => {
       listCitiesByStateUseCase.execute({
         state_id: 1,
       }),
-    ).rejects.toEqual(new AppError("State not found", 404));
-  });
-
-  it("should not be able to list all cities by state if state id is less or equal to 0", async () => {
-    await expect(
-      listCitiesByStateUseCase.execute({
-        state_id: 0,
-      }),
-    ).rejects.toEqual(new AppError("Invalid state"));
-    await expect(
-      listCitiesByStateUseCase.execute({
-        state_id: -1,
-      }),
-    ).rejects.toEqual(new AppError("Invalid state"));
+    ).rejects.toEqual(new AppError(AppErrorMessages.STATE_NOT_FOUND, 404));
   });
 });

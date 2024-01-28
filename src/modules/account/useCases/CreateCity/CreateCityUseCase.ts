@@ -3,7 +3,9 @@ import { inject, injectable } from "tsyringe";
 import { ICreateCityDTO } from "@modules/account/@types/ICreateCityDTO";
 import { ICityRepository } from "@modules/account/repositories/ICityRepository";
 
+import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
 import { AppError } from "@shared/errors/AppError";
+
 import { IStateRepository } from "@modules/account/repositories/IStateRepository";
 
 @injectable()
@@ -20,7 +22,7 @@ class CreateCityUseCase {
     const stateExists = await this.stateRepository.findById(city_state_id);
 
     if (!stateExists) {
-      throw new AppError("State not found!", 404);
+      throw new AppError(AppErrorMessages.STATE_NOT_FOUND, 404);
     }
 
     const cityAlreadyExists = await this.cityRepository.findByNameAndState({
@@ -29,7 +31,7 @@ class CreateCityUseCase {
     });
 
     if (cityAlreadyExists) {
-      throw new AppError("City already exists!");
+      throw new AppError(AppErrorMessages.CITY_ALREADY_EXISTS);
     }
 
     const city = await this.cityRepository.create({

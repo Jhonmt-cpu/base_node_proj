@@ -1,7 +1,10 @@
-import { DatabaseInMemory } from "@global/repositories/inMemory/DatabaseInMemory";
+import { DatabaseInMemory } from "@shared/repositories/inMemory/DatabaseInMemory";
 
 import { PhoneRepositoryInMemory } from "@modules/account/repositories/inMemory/PhoneRepositoryInMemory";
 import { UserRepositoryInMemory } from "@modules/account/repositories/inMemory/UserRepositoryInMemory";
+
+import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
+import { AppError } from "@shared/errors/AppError";
 
 import { GetUserPhoneUseCase } from "./GetUserPhoneUseCase";
 
@@ -51,6 +54,6 @@ describe("GetUserPhoneUseCase", () => {
       getUserPhoneUseCase.execute({
         user_id: 1,
       }),
-    ).rejects.toHaveProperty("message");
+    ).rejects.toEqual(new AppError(AppErrorMessages.USER_PHONE_NOT_FOUND, 404));
   });
 });

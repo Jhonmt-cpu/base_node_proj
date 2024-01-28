@@ -12,7 +12,7 @@ export default {
   user_test_admin: {
     user_name: "User Test Admin",
     user_email: "admin@test.com",
-    user_cpf: 12345678910,
+    user_cpf: 41494042088,
     user_birth_date: new Date("2001-11-16"),
     user_password: "12345678",
   },
@@ -29,7 +29,7 @@ export default {
   user_test: {
     user_name: "User Test",
     user_email: "user@test.com",
-    user_cpf: 10987654321,
+    user_cpf: 48150559043,
     user_birth_date: new Date("2001-11-16"),
     user_password: "12345678",
   },

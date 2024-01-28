@@ -2,6 +2,7 @@ import express, { NextFunction, Request, Response } from "express";
 import { errors } from "celebrate";
 
 import { AppError } from "@errors/AppError";
+import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
 
 import { router } from "./routes";
 
@@ -26,8 +27,8 @@ app.use((err: Error, request: Request, response: Response, _: NextFunction) => {
   console.log(err);
 
   return response.status(500).json({
-    status: "error",
-    message: `Internal server error`,
+    status: AppErrorMessages.ERROR,
+    message: AppErrorMessages.INTERNAL_SERVER_ERROR,
   });
 });
 

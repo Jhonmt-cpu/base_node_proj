@@ -1,4 +1,4 @@
-import { DatabaseInMemory } from "@global/repositories/inMemory/DatabaseInMemory";
+import { DatabaseInMemory } from "@shared/repositories/inMemory/DatabaseInMemory";
 
 import { GenderRepositoryInMemory } from "@modules/account/repositories/inMemory/GenderRepositoryInMemory";
 import { NeighborHoodRepositoryInMemory } from "@modules/account/repositories/inMemory/NeighborhoodRepositoryInMemory";
@@ -8,7 +8,9 @@ import { UserRepositoryInMemory } from "@modules/account/repositories/inMemory/U
 
 import { DayjsDateProvider } from "@shared/container/providers/DateProvider/implementations/DayjsDateProvider";
 import { InMemoryHashProvider } from "@shared/container/providers/HashProvider/implementations/InMemoryHashProvider";
+
 import { AppError } from "@shared/errors/AppError";
+import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
 
 import { CreateUserUseCase } from "./CreateUserUseCase";
 
@@ -127,7 +129,7 @@ describe("Create User", () => {
           address_zip_code: 12345678,
         },
       }),
-    ).rejects.toEqual(new AppError("User age must be between 18 and 120"));
+    ).rejects.toEqual(new AppError(AppErrorMessages.USER_INVALID_AGE));
 
     await expect(
       createUserUseCase.execute({
@@ -149,7 +151,7 @@ describe("Create User", () => {
           address_zip_code: 12345678,
         },
       }),
-    ).rejects.toEqual(new AppError("User age must be between 18 and 120"));
+    ).rejects.toEqual(new AppError(AppErrorMessages.USER_INVALID_AGE));
   });
 
   it("should not create a user with invalid gender", async () => {
@@ -173,7 +175,7 @@ describe("Create User", () => {
           address_zip_code: 12345678,
         },
       }),
-    ).rejects.toEqual(new AppError("Invalid Gender", 404));
+    ).rejects.toEqual(new AppError(AppErrorMessages.GENDER_NOT_FOUND, 404));
   });
 
   it("should not create a user with invalid neighborhood", async () => {
@@ -201,7 +203,9 @@ describe("Create User", () => {
           address_zip_code: 12345678,
         },
       }),
-    ).rejects.toEqual(new AppError("Invalid Neighborhood", 404));
+    ).rejects.toEqual(
+      new AppError(AppErrorMessages.NEIGHBORHOOD_NOT_FOUND, 404),
+    );
   });
 
   it("should not create a user with same phone number", async () => {
@@ -249,7 +253,9 @@ describe("Create User", () => {
           address_zip_code: 12345678,
         },
       }),
-    ).rejects.toEqual(new AppError("Phone already exists", 400));
+    ).rejects.toEqual(
+      new AppError(AppErrorMessages.USER_PHONE_ALREADY_EXISTS, 400),
+    );
   });
 
   it("should not create a user with same email or cpf", async () => {
@@ -293,7 +299,7 @@ describe("Create User", () => {
           address_zip_code: 12345678,
         },
       }),
-    ).rejects.toEqual(new AppError("User already exists", 400));
+    ).rejects.toEqual(new AppError(AppErrorMessages.USER_ALREADY_EXISTS, 400));
 
     await expect(
       createUserUseCase.execute({
@@ -315,7 +321,7 @@ describe("Create User", () => {
           address_zip_code: 12345678,
         },
       }),
-    ).rejects.toEqual(new AppError("User already exists", 400));
+    ).rejects.toEqual(new AppError(AppErrorMessages.USER_ALREADY_EXISTS, 400));
 
     await expect(
       createUserUseCase.execute({
@@ -337,6 +343,6 @@ describe("Create User", () => {
           address_zip_code: 12345678,
         },
       }),
-    ).rejects.toEqual(new AppError("User already exists", 400));
+    ).rejects.toEqual(new AppError(AppErrorMessages.USER_ALREADY_EXISTS, 400));
   });
 });

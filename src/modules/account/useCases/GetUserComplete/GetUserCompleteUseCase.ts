@@ -5,6 +5,7 @@ import { IUserRepository } from "@modules/account/repositories/IUserRepository";
 import { flatUserCompleteToUserWithoutPassword } from "@modules/account/mappers/flatUserCompleteToUserWithoutPassword";
 
 import { AppError } from "@shared/errors/AppError";
+import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
 
 @injectable()
 class GetUserCompleteUseCase {
@@ -17,7 +18,7 @@ class GetUserCompleteUseCase {
     const user = await this.userRepository.findByIdCompleteRelations(user_id);
 
     if (!user) {
-      throw new AppError("User not found!", 404);
+      throw new AppError(AppErrorMessages.USER_NOT_FOUND, 404);
     }
 
     const userWithoutPassword = flatUserCompleteToUserWithoutPassword(user);

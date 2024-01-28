@@ -1,8 +1,9 @@
-import { DatabaseInMemory } from "@global/repositories/inMemory/DatabaseInMemory";
+import { DatabaseInMemory } from "@shared/repositories/inMemory/DatabaseInMemory";
 
 import { RoleRepositoryInMemory } from "@modules/account/repositories/inMemory/RoleRepositoryInMemory";
 
 import { AppError } from "@errors/AppError";
+import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
 
 import { CreateRoleUseCase } from "./CreateRoleUseCase";
 
@@ -38,6 +39,6 @@ describe("Create Role", () => {
       createRoleUseCase.execute({
         role_name: "any_role_name",
       }),
-    ).rejects.toEqual(new AppError("Role already exists!"));
+    ).rejects.toEqual(new AppError(AppErrorMessages.ROLE_ALREADY_EXISTS));
   });
 });

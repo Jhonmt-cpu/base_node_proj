@@ -1,4 +1,4 @@
-import { DatabaseInMemory } from "@global/repositories/inMemory/DatabaseInMemory";
+import { DatabaseInMemory } from "@shared/repositories/inMemory/DatabaseInMemory";
 
 import { GenderRepositoryInMemory } from "@modules/account/repositories/inMemory/GenderRepositoryInMemory";
 import { PhoneRepositoryInMemory } from "@modules/account/repositories/inMemory/PhoneRepositoryInMemory";
@@ -10,6 +10,7 @@ import { InMemoryHashProvider } from "@shared/container/providers/HashProvider/i
 import { AppError } from "@shared/errors/AppError";
 
 import { UpdateUserUseCase } from "./UpdateUserUseCase";
+import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
 
 let databaseInMemory: DatabaseInMemory;
 
@@ -165,7 +166,7 @@ describe("Update User", () => {
         user_id: 1,
         user_password: "123456",
       }),
-    ).rejects.toEqual(new AppError("User not found", 404));
+    ).rejects.toEqual(new AppError(AppErrorMessages.USER_NOT_FOUND, 404));
   });
 
   it("should not be able to update an user with incorrect password", async () => {
@@ -183,7 +184,9 @@ describe("Update User", () => {
         user_id: user.user_id,
         user_password: "incorrect_password",
       }),
-    ).rejects.toEqual(new AppError("Incorrect password", 401));
+    ).rejects.toEqual(
+      new AppError(AppErrorMessages.USER_INCORRECT_PASSWORD, 401),
+    );
   });
 
   it("should not be able to update the user email if it already belongs to another user", async () => {
@@ -213,7 +216,7 @@ describe("Update User", () => {
         user_password: user.user_password,
         user_email: user2.user_email,
       }),
-    ).rejects.toEqual(new AppError("Email already in use"));
+    ).rejects.toEqual(new AppError(AppErrorMessages.USER_EMAIL_ALREADY_IN_USE));
   });
 
   it("should not be able to update user gender if it does not exists", async () => {
@@ -238,7 +241,7 @@ describe("Update User", () => {
         user_password: user.user_password,
         user_gender_id: gender.gender_id + 1,
       }),
-    ).rejects.toEqual(new AppError("Gender does not exists"));
+    ).rejects.toEqual(new AppError(AppErrorMessages.GENDER_NOT_FOUND));
   });
 
   it("should not be able to update user phone if it already belongs to another user", async () => {
@@ -274,7 +277,7 @@ describe("Update User", () => {
           phone_number: phone2.phone_number,
         },
       }),
-    ).rejects.toEqual(new AppError("Phone already in use"));
+    ).rejects.toEqual(new AppError(AppErrorMessages.USER_PHONE_ALREADY_IN_USE));
   });
 
   it("should not be able to update user phone if it doesn't exists", async () => {
@@ -298,7 +301,7 @@ describe("Update User", () => {
           phone_number: 123456789,
         },
       }),
-    ).rejects.toEqual(new AppError("Phone not found", 404));
+    ).rejects.toEqual(new AppError(AppErrorMessages.USER_PHONE_NOT_FOUND, 404));
   });
 
   it("should not be able to update user address if it doesn't exists", async () => {
@@ -321,30 +324,9 @@ describe("Update User", () => {
           address_street: "Street Test",
         },
       }),
-    ).rejects.toEqual(new AppError("Address not found", 404));
-  });
-
-  it("should not be able to update user address if it doesn't exists", async () => {
-    const user = {
-      user_name: "User Test",
-      user_email: "usertest@test.com",
-      user_cpf: 12345678910,
-      user_gender_id: 1,
-      user_password: "123456",
-      user_birth_date: new Date("2005-01-01"),
-    };
-
-    const userResponse = await userRepositoryInMemory.create(user);
-
-    await expect(
-      updateUserUseCase.execute({
-        user_id: userResponse.user_id,
-        user_password: user.user_password,
-        user_address: {
-          address_street: "Street Test",
-        },
-      }),
-    ).rejects.toEqual(new AppError("Address not found", 404));
+    ).rejects.toEqual(
+      new AppError(AppErrorMessages.USER_ADDRESS_NOT_FOUND, 404),
+    );
   });
 
   it("should not be able to update user address if neighborhood doesn't exists", async () => {
@@ -376,7 +358,9 @@ describe("Update User", () => {
           address_neighborhood_id: address.address_neighborhood_id + 1,
         },
       }),
-    ).rejects.toEqual(new AppError("Neighborhood does not exists", 404));
+    ).rejects.toEqual(
+      new AppError(AppErrorMessages.NEIGHBORHOOD_NOT_FOUND, 404),
+    );
   });
 
   it("should not update an user property if it is undefined or the same as the current name", async () => {

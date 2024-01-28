@@ -1,8 +1,9 @@
-import { DatabaseInMemory } from "@global/repositories/inMemory/DatabaseInMemory";
+import { DatabaseInMemory } from "@shared/repositories/inMemory/DatabaseInMemory";
 
 import { StateRepositoryInMemory } from "@modules/account/repositories/inMemory/StateRepositoryInMemory";
 
 import { AppError } from "@shared/errors/AppError";
+import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
 
 import { CreateStateUseCase } from "./CreateStateUseCase";
 
@@ -42,6 +43,6 @@ describe("Create State", () => {
         state_name: "state_test",
         state_uf: "ST",
       }),
-    ).rejects.toEqual(new AppError("State already exists!"));
+    ).rejects.toEqual(new AppError(AppErrorMessages.STATE_ALREADY_EXISTS));
   });
 });

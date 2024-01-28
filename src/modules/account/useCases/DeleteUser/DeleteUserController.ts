@@ -13,6 +13,8 @@ class DeleteUserController {
 
     await deleteUserUseCase.execute({
       user_id: userIdNumber,
+      is_admin_request: true,
+      user_password: "",
     });
 
     return response.status(204).send();

@@ -242,7 +242,7 @@ accountRouter.get(
   checkRole(rolesGroups.admin),
   celebrate({
     [Segments.PARAMS]: {
-      user_id: Joi.number().integer().min(1).required(),
+      user_id: Joi.number().integer().min(1).max(2147483647).required(),
     },
   }),
   getUserController.handle,
@@ -260,7 +260,7 @@ accountRouter.get(
   checkRole(rolesGroups.admin),
   celebrate({
     [Segments.PARAMS]: {
-      user_id: Joi.number().integer().min(1).required(),
+      user_id: Joi.number().integer().min(1).max(2147483647).required(),
     },
   }),
   getUserAddressController.handle,
@@ -278,7 +278,7 @@ accountRouter.get(
   checkRole(rolesGroups.admin),
   celebrate({
     [Segments.PARAMS]: {
-      user_id: Joi.number().integer().min(1).required(),
+      user_id: Joi.number().integer().min(1).max(2147483647).required(),
     },
   }),
   getUserPhoneController.handle,
@@ -296,7 +296,7 @@ accountRouter.get(
   checkRole(rolesGroups.admin),
   celebrate({
     [Segments.PARAMS]: {
-      user_id: Joi.number().integer().min(1).required(),
+      user_id: Joi.number().integer().min(1).max(2147483647).required(),
     },
   }),
   getUserCompleteController.handle,
@@ -337,7 +337,7 @@ accountRouter.patch(
   checkRole(rolesGroups.admin),
   celebrate({
     [Segments.PARAMS]: {
-      user_id: Joi.number().integer().min(1).required(),
+      user_id: Joi.number().integer().min(1).max(2147483647).required(),
     },
     [Segments.BODY]: {
       user_name: Joi.string().trim().min(3).max(250).optional(),
@@ -367,6 +367,11 @@ accountRouter.patch(
 accountRouter.delete(
   "/user/me",
   ensureAuthenticated.execute,
+  celebrate({
+    [Segments.QUERY]: {
+      user_password: Joi.string().min(8).max(50).required(),
+    },
+  }),
   deleteUserMeController.handle,
 );
 
@@ -376,7 +381,7 @@ accountRouter.delete(
   checkRole(rolesGroups.admin),
   celebrate({
     [Segments.PARAMS]: {
-      user_id: Joi.number().integer().min(1).required(),
+      user_id: Joi.number().integer().min(1).max(2147483647).required(),
     },
   }),
   deleteUserController.handle,

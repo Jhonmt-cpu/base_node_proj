@@ -1,8 +1,9 @@
-import { DatabaseInMemory } from "@global/repositories/inMemory/DatabaseInMemory";
+import { DatabaseInMemory } from "@shared/repositories/inMemory/DatabaseInMemory";
 
 import { CityRepositoryInMemory } from "@modules/account/repositories/inMemory/CityRepositoryInMemory";
 import { StateRepositoryInMemory } from "@modules/account/repositories/inMemory/StateRepositoryInMemory";
 
+import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
 import { AppError } from "@shared/errors/AppError";
 
 import { CreateCityUseCase } from "./CreateCityUseCase";
@@ -46,7 +47,7 @@ describe("Create City", () => {
         city_name: "city_test",
         city_state_id: 1,
       }),
-    ).rejects.toEqual(new AppError("State not found!", 404));
+    ).rejects.toEqual(new AppError(AppErrorMessages.STATE_NOT_FOUND, 404));
   });
 
   it("should not be able to create a new city with same name and state", async () => {
@@ -65,6 +66,6 @@ describe("Create City", () => {
         city_name: city.city_name,
         city_state_id: state.state_id,
       }),
-    ).rejects.toEqual(new AppError("City already exists!"));
+    ).rejects.toEqual(new AppError(AppErrorMessages.CITY_ALREADY_EXISTS));
   });
 });

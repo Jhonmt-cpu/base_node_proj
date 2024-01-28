@@ -1,10 +1,11 @@
-import { DatabaseInMemory } from "@global/repositories/inMemory/DatabaseInMemory";
+import { DatabaseInMemory } from "@shared/repositories/inMemory/DatabaseInMemory";
 
 import { AddressRepositoryInMemory } from "@modules/account/repositories/inMemory/AddressRepositoryInMemory";
 
 import { AppError } from "@shared/errors/AppError";
 
 import { GetUserAddressUseCase } from "./GetUserAddressUseCase";
+import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
 
 let databaseInMemory: DatabaseInMemory;
 
@@ -46,6 +47,8 @@ describe("Get User Address", () => {
       getUserAddressUseCase.execute({
         user_address_id: 1,
       }),
-    ).rejects.toEqual(new AppError("Address not found!", 404));
+    ).rejects.toEqual(
+      new AppError(AppErrorMessages.USER_ADDRESS_NOT_FOUND, 404),
+    );
   });
 });

@@ -5,6 +5,7 @@ import { ICityRepository } from "@modules/account/repositories/ICityRepository";
 import { INeighborhoodRepository } from "@modules/account/repositories/INeighborhoodRepository";
 
 import { AppError } from "@shared/errors/AppError";
+import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
 
 @injectable()
 class CreateNeighborhoodUseCase {
@@ -22,7 +23,7 @@ class CreateNeighborhoodUseCase {
     const cityExists = await this.cityRepository.findById(neighborhood_city_id);
 
     if (!cityExists) {
-      throw new AppError("City not found!");
+      throw new AppError(AppErrorMessages.CITY_NOT_FOUND, 404);
     }
 
     const neighborhoodAlreadyExists =
@@ -32,7 +33,7 @@ class CreateNeighborhoodUseCase {
       });
 
     if (neighborhoodAlreadyExists) {
-      throw new AppError("Neighborhood already exists!");
+      throw new AppError(AppErrorMessages.NEIGHBORHOOD_ALREADY_EXISTS);
     }
 
     const neighborhood = await this.neighborhoodRepository.create({

@@ -3,7 +3,10 @@ import { NextFunction, Request, Response } from "express";
 
 import { IEncryptAndDecryptProvider } from "@modules/auth/container/providers/EncryptAndDecryptProvider/IEncryptAndDecryptProvider";
 import { CryptoEncryptAndDecryptProvider } from "@modules/auth/container/providers/EncryptAndDecryptProvider/implementations/CryptoEncryptAndDecryptProvider";
+
 import { AppError } from "@shared/errors/AppError";
+import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
+
 import auth from "@config/auth";
 
 declare module "jsonwebtoken" {
@@ -31,7 +34,7 @@ class EnsureAuthenticated {
     const authToken = request.headers.authorization;
 
     if (!authToken) {
-      throw new AppError("Token missing", 401);
+      throw new AppError(AppErrorMessages.TOKEN_MISSING, 401);
     }
 
     const [, token] = authToken.split(" ");
@@ -61,7 +64,7 @@ class EnsureAuthenticated {
 
       console.log(e);
 
-      throw new AppError("Invalid token", 401);
+      throw new AppError(AppErrorMessages.INVALID_TOKEN, 401);
     }
   }
 }

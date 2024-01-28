@@ -10,6 +10,7 @@ import auth from "@config/auth";
 import { AppError } from "@shared/errors/AppError";
 
 import { RefreshTokenUseCase } from "./RefreshTokenUseCase";
+import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
 
 let dateProvider: DayjsDateProvider;
 
@@ -63,6 +64,8 @@ describe("RefreshTokenUseCase", () => {
       refreshTokenUseCase.execute({
         refresh_token: uuid(),
       }),
-    ).rejects.toEqual(new AppError("Refresh token not found", 404));
+    ).rejects.toEqual(
+      new AppError(AppErrorMessages.REFRESH_TOKEN_NOT_FOUND, 404),
+    );
   });
 });

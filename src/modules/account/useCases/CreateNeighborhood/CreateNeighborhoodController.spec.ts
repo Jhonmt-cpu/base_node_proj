@@ -7,12 +7,13 @@ import { app } from "@shared/infra/http/app";
 
 import { StateEntity } from "@modules/account/infra/knex/entities/StateEntity";
 import { CityEntity } from "@modules/account/infra/knex/entities/CityEntity";
+import { NeighborhoodEntity } from "@modules/account/infra/knex/entities/NeighborhoodEntity";
 
 import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
 
 let token: string;
 
-describe("Create City Controller", () => {
+describe("Create Neighborhood Controller", () => {
   beforeAll(async () => {
     await dbConnection.migrate.latest();
     await dbConnection.seed.run();
@@ -34,7 +35,7 @@ describe("Create City Controller", () => {
     await dbConnection.destroy();
   });
 
-  it("should be able to create a new city", async () => {
+  it("should be able to create a new neighborhood", async () => {
     const state = await dbConnection<StateEntity>("tb_states")
       .insert({
         state_name: "New State",
@@ -46,36 +47,47 @@ describe("Create City Controller", () => {
       throw new Error("State not created");
     }
 
-    const response = await request(app)
-      .post("/account/city")
-      .send({
+    const city = await dbConnection<CityEntity>("tb_cities")
+      .insert({
         city_name: "New City",
         city_state_id: state[0].state_id,
+      })
+      .returning("*");
+
+    if (!city[0]) {
+      throw new Error("City not created");
+    }
+
+    const response = await request(app)
+      .post("/account/neighborhood")
+      .send({
+        neighborhood_name: "New Neighborhood",
+        neighborhood_city_id: city[0].city_id,
       })
       .set({
         Authorization: `Bearer ${token}`,
       });
 
     expect(response.status).toBe(201);
-    expect(response.body).toHaveProperty("city_id");
+    expect(response.body).toHaveProperty("neighborhood_id");
   });
 
-  it("should not be able to create a new city with invalid state", async () => {
+  it("should not be able to create a new neighborhood with invalid city", async () => {
     const response = await request(app)
-      .post("/account/city")
+      .post("/account/neighborhood")
       .send({
-        city_name: "New City",
-        city_state_id: 999,
+        neighborhood_name: "New Neighborhood",
+        neighborhood_city_id: 999,
       })
       .set({
         Authorization: `Bearer ${token}`,
       });
 
     expect(response.status).toBe(404);
-    expect(response.body.message).toBe(AppErrorMessages.STATE_NOT_FOUND);
+    expect(response.body.message).toBe(AppErrorMessages.CITY_NOT_FOUND);
   });
 
-  it("should not be able to create a new city with same name and state", async () => {
+  it("should not be able to create a new neighborhood with same name and city", async () => {
     const state = await dbConnection<StateEntity>("tb_states")
       .insert({
         state_name: "New State 2",
@@ -87,26 +99,39 @@ describe("Create City Controller", () => {
       throw new Error("State not created");
     }
 
-    await dbConnection<CityEntity>("tb_cities").insert({
-      city_name: "New City 2",
-      city_state_id: state[0].state_id,
+    const city = await dbConnection<CityEntity>("tb_cities")
+      .insert({
+        city_name: "New City 2",
+        city_state_id: state[0].state_id,
+      })
+      .returning("*");
+
+    if (!city[0]) {
+      throw new Error("City not created");
+    }
+
+    await dbConnection<NeighborhoodEntity>("tb_neighborhoods").insert({
+      neighborhood_name: "New Neighborhood 2",
+      neighborhood_city_id: city[0].city_id,
     });
 
     const response = await request(app)
-      .post("/account/city")
+      .post("/account/neighborhood")
       .send({
-        city_name: "New City 2",
-        city_state_id: state[0].state_id,
+        neighborhood_name: "New Neighborhood 2",
+        neighborhood_city_id: city[0].city_id,
       })
       .set({
         Authorization: `Bearer ${token}`,
       });
 
     expect(response.status).toBe(400);
-    expect(response.body.message).toBe(AppErrorMessages.CITY_ALREADY_EXISTS);
+    expect(response.body.message).toBe(
+      AppErrorMessages.NEIGHBORHOOD_ALREADY_EXISTS,
+    );
   });
 
-  it("should not be able to create a new city with a normal user", async () => {
+  it("should not be able to create a new neighborhood with a normal user", async () => {
     const { user_test } = testConfig;
 
     const loginResponse = await request(app).post("/auth/login").send({
@@ -117,10 +142,10 @@ describe("Create City Controller", () => {
     const userToken = loginResponse.body.token;
 
     const response = await request(app)
-      .post("/account/city")
+      .post("/account/neighborhood")
       .send({
-        city_name: "New City",
-        city_state_id: 1,
+        neighborhood_name: "New Neighborhood",
+        neighborhood_city_id: 1,
       })
       .set({
         Authorization: `Bearer ${userToken}`,
@@ -132,10 +157,10 @@ describe("Create City Controller", () => {
     );
   });
 
-  it("should not be able to create a new city without a logged user", async () => {
-    const response = await request(app).post("/account/city").send({
-      city_name: "New City",
-      city_state_id: 1,
+  it("should not be able to create a new neighborhood without a logged user", async () => {
+    const response = await request(app).post("/account/neighborhood").send({
+      neighborhood_name: "New Neighborhood",
+      neighborhood_city_id: 1,
     });
 
     expect(response.status).toBe(401);

@@ -6,6 +6,7 @@ import { INeighborhoodRepository } from "@modules/account/repositories/INeighbor
 import { IFindNeighborhoodsByCityDTO } from "@modules/account/@types/IFindNeighborhoodsByCityDTO";
 
 import { AppError } from "@shared/errors/AppError";
+import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
 
 @injectable()
 class ListNeighborhoodsByCityUseCase {
@@ -20,14 +21,10 @@ class ListNeighborhoodsByCityUseCase {
   async execute({
     city_id,
   }: IFindNeighborhoodsByCityDTO): Promise<NeighborhoodEntity[]> {
-    if (city_id <= 0) {
-      throw new AppError("Invalid city!");
-    }
-
     const cityExists = await this.cityRepository.findById(city_id);
 
     if (!cityExists) {
-      throw new AppError("City does not exists!", 404);
+      throw new AppError(AppErrorMessages.CITY_NOT_FOUND, 404);
     }
 
     const neighborhoods = await this.neighborhoodRepository.findByCityId(
