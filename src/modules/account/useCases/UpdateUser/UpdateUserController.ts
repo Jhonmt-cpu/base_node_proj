@@ -14,7 +14,6 @@ class UpdateUserController {
     const {
       user_name,
       user_email,
-      user_password,
       user_new_password,
       user_gender_id,
       user_phone,
@@ -23,11 +22,12 @@ class UpdateUserController {
 
     const updateFields: IUpdateUserDTO = {
       user_id: userIdNumber,
-      user_password,
+      user_password: "",
       user_name,
       user_email,
       user_new_password,
       user_gender_id,
+      is_admin_request: true,
     };
 
     if (user_phone) {

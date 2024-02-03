@@ -21,9 +21,7 @@ class ListAllRolesPaginatedController {
 
     const roles = await listAllRolesPaginatedUseCase.execute(data);
 
-    const status = roles.length === 0 ? 204 : 200;
-
-    return response.status(status).json(roles);
+    return response.status(200).json(roles);
   }
 }
 

@@ -5,7 +5,7 @@ export async function up(knex: Knex): Promise<void> {
     CREATE OR REPLACE FUNCTION update_modified_column_address()
     RETURNS TRIGGER AS $$
     BEGIN
-      NEW.phone_updated_at = now();
+      NEW.address_updated_at = now();
       RETURN NEW; 
     END;
     $$ language 'plpgsql'

@@ -28,6 +28,7 @@ class UpdateUserMeController {
       user_email,
       user_new_password,
       user_gender_id,
+      is_admin_request: false,
     };
 
     if (user_phone) {

@@ -10,5 +10,6 @@
     "unmocked",
     "usecase"
   ],
-  "liveServer.settings.port": 5501
+  "liveServer.settings.port": 5501,
+  "livePreview.defaultPreviewPath": "/coverage/lcov-report/index.html"
 }

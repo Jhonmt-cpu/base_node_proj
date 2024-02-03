@@ -342,7 +342,6 @@ accountRouter.patch(
     [Segments.BODY]: {
       user_name: Joi.string().trim().min(3).max(250).optional(),
       user_email: Joi.string().trim().email().optional(),
-      user_password: Joi.string().min(8).max(50).required(),
       user_new_password: Joi.string().min(8).max(50).optional(),
       user_gender_id: Joi.number().integer().min(1).optional(),
       user_phone: Joi.string()

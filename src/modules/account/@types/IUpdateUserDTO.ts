@@ -16,6 +16,7 @@ type IUpdateUserDTO = {
     address_neighborhood_id?: number;
     address_zip_code?: number;
   };
+  is_admin_request: boolean;
 };
 
 export { IUpdateUserDTO };

@@ -42,6 +42,7 @@ class UpdateUserUseCase {
     user_gender_id,
     user_phone,
     user_address,
+    is_admin_request,
   }: IUpdateUserDTO): Promise<IUpdateUserResponseDTO> {
     const user = await this.userRepository.findById(user_id);
 
@@ -49,13 +50,15 @@ class UpdateUserUseCase {
       throw new AppError(AppErrorMessages.USER_NOT_FOUND, 404);
     }
 
-    const passwordMatch = await this.hashProvider.compareHash(
-      user_password,
-      user.user_password,
-    );
+    if (!is_admin_request) {
+      const passwordMatch = await this.hashProvider.compareHash(
+        user_password,
+        user.user_password,
+      );
 
-    if (!passwordMatch) {
-      throw new AppError(AppErrorMessages.USER_INCORRECT_PASSWORD, 401);
+      if (!passwordMatch) {
+        throw new AppError(AppErrorMessages.USER_INCORRECT_PASSWORD, 401);
+      }
     }
 
     const updateUserFields: Partial<UserEntity> = {};
@@ -88,7 +91,7 @@ class UpdateUserUseCase {
       const genderExists = await this.genderRepository.findById(user_gender_id);
 
       if (!genderExists) {
-        throw new AppError(AppErrorMessages.GENDER_NOT_FOUND);
+        throw new AppError(AppErrorMessages.GENDER_NOT_FOUND, 404);
       }
 
       updateUserFields.user_gender_id = user_gender_id;

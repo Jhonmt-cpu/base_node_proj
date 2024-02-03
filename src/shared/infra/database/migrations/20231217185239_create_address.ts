@@ -9,7 +9,6 @@ export async function up(knex: Knex): Promise<void> {
       address_complement VARCHAR (30),
       address_neighborhood_id INTEGER NOT NULL REFERENCES tb_neighborhoods (neighborhood_id),
       address_zip_code INTEGER NOT NULL,
-      address_created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP,
       address_updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT CURRENT_TIMESTAMP
     )
   `);
