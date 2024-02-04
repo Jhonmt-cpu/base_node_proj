@@ -30,10 +30,16 @@ class RefreshTokenRepository implements IRefreshTokenRepository {
     return refreshToken[0];
   }
 
-  async deleteById(refresh_token_id: string): Promise<void> {
-    await dbConnection<RefreshTokenEntity>("tb_refresh_tokens").delete().where({
-      refresh_token_id,
-    });
+  async deleteById(refresh_token_id: string): Promise<number> {
+    const rowsDeleted = await dbConnection<RefreshTokenEntity>(
+      "tb_refresh_tokens",
+    )
+      .delete()
+      .where({
+        refresh_token_id,
+      });
+
+    return rowsDeleted;
   }
 
   async deleteAllByUserId(refresh_token_user_id: number): Promise<void> {

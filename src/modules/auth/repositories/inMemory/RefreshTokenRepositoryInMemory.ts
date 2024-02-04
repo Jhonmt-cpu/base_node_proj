@@ -28,12 +28,18 @@ class RefreshTokenRepositoryInMemory implements IRefreshTokenRepository {
     return refreshToken;
   }
 
-  async deleteById(refresh_token_id: string): Promise<void> {
+  async deleteById(refresh_token_id: string): Promise<number> {
     const index = this.databaseInMemory.refresh_tokens.findIndex(
       (refreshToken) => refreshToken.refresh_token_id === refresh_token_id,
     );
 
+    if (index === -1) {
+      return 0;
+    }
+
     this.databaseInMemory.refresh_tokens.splice(index, 1);
+
+    return 1;
   }
 
   async deleteAllByUserId(refresh_token_user_id: number): Promise<void> {

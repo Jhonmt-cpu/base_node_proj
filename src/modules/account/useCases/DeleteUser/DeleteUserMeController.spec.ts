@@ -305,6 +305,94 @@ describe("Delete User Me Controller", () => {
     expect(userAddressDeleted).toHaveProperty("user_address_id");
   });
 
+  it("should not be able to delete a me user if it does not exists", async () => {
+    const gender = await dbConnection<GenderEntity>("tb_genders")
+      .insert({
+        gender_name: "New Gender 4",
+      })
+      .returning("*");
+
+    if (!gender[0]) {
+      throw new Error("Gender not created");
+    }
+
+    const state = await dbConnection<StateEntity>("tb_states")
+      .insert({
+        state_name: "New State 4",
+        state_uf: "NS",
+      })
+      .returning("*");
+
+    if (!state[0]) {
+      throw new Error("State not created");
+    }
+
+    const city = await dbConnection<CityEntity>("tb_cities")
+      .insert({
+        city_name: "New City 4",
+        city_state_id: state[0].state_id,
+      })
+      .returning("*");
+
+    if (!city[0]) {
+      throw new Error("City not created");
+    }
+
+    const neighborhood = await dbConnection<NeighborhoodEntity>(
+      "tb_neighborhoods",
+    )
+      .insert({
+        neighborhood_name: "New Neighborhood 4",
+        neighborhood_city_id: city[0].city_id,
+      })
+      .returning("*");
+
+    if (!neighborhood[0]) {
+      throw new Error("Neighborhood not created");
+    }
+
+    const user = {
+      user_name: "User Test 4",
+      user_email: "usertest4@test.com",
+      user_birth_date: new Date(),
+      user_password: "12345678",
+      user_cpf: 12345678911,
+      user_gender_id: gender[0].gender_id,
+    };
+
+    const insertUserResponse = await dbConnection<UserEntity>("tb_users")
+      .insert({
+        ...user,
+        user_password: await hashProvider.generateHash(user.user_password),
+      })
+      .returning("*");
+
+    const tokenResponse = await request(app).post("/auth/login").send({
+      user_email: user.user_email,
+      user_password: user.user_password,
+    });
+
+    const { token } = tokenResponse.body;
+
+    await dbConnection<UserEntity>("tb_users")
+      .where({
+        user_id: insertUserResponse[0].user_id,
+      })
+      .del();
+
+    const response = await request(app)
+      .delete(`/account/user/me`)
+      .query({
+        user_password: user.user_password,
+      })
+      .set({
+        Authorization: `Bearer ${token}`,
+      });
+
+    expect(response.status).toBe(404);
+    expect(response.body.message).toBe(AppErrorMessages.USER_NOT_FOUND);
+  });
+
   it("should not be able to delete a user if it is not authenticated", async () => {
     const response = await request(app).delete(`/account/user/1`);
 
