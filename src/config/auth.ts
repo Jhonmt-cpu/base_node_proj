@@ -7,7 +7,6 @@ export default {
   },
   refresh: {
     expiresInDays: process.env.REFRESH_TOKEN_EXPIRES_IN_DAYS || "30",
-    cachePrefix: "refresh_token",
   },
   aes: {
     secretKey: uuid(),

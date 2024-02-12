@@ -1,15 +1,20 @@
 import { inject, injectable } from "tsyringe";
 
+import { cachePrefixes } from "@config/cache";
+
 import { ICreateNeighborhoodDTO } from "@modules/account/@types/ICreateNeighborhoodDTO";
 import { ICityRepository } from "@modules/account/repositories/ICityRepository";
 import { INeighborhoodRepository } from "@modules/account/repositories/INeighborhoodRepository";
 
 import { AppError } from "@shared/errors/AppError";
 import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
+import { ICacheProvider } from "@shared/container/providers/CacheProvider/ICacheProvider";
 
 @injectable()
 class CreateNeighborhoodUseCase {
   constructor(
+    @inject("CacheProvider")
+    private cacheProvider: ICacheProvider,
     @inject("CityRepository")
     private cityRepository: ICityRepository,
     @inject("NeighborhoodRepository")
@@ -40,6 +45,10 @@ class CreateNeighborhoodUseCase {
       neighborhood_city_id,
       neighborhood_name,
     });
+
+    const cacheKey = `${cachePrefixes.listNeighborhoodsByCity}:city_id:${neighborhood_city_id}`;
+
+    await this.cacheProvider.cacheDel(cacheKey);
 
     return neighborhood;
   }

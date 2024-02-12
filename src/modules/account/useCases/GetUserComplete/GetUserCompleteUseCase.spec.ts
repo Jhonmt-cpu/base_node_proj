@@ -1,4 +1,4 @@
-import { DatabaseInMemory } from "@shared/repositories/inMemory/DatabaseInMemory";
+import { cachePrefixes } from "@config/cache";
 
 import { AddressRepositoryInMemory } from "@modules/account/repositories/inMemory/AddressRepositoryInMemory";
 import { CityRepositoryInMemory } from "@modules/account/repositories/inMemory/CityRepositoryInMemory";
@@ -10,10 +10,17 @@ import { StateRepositoryInMemory } from "@modules/account/repositories/inMemory/
 import { UserRepositoryInMemory } from "@modules/account/repositories/inMemory/UserRepositoryInMemory";
 import { flatUserCompleteToUserWithoutPassword } from "@modules/account/mappers/flatUserCompleteToUserWithoutPassword";
 
+import { DatabaseInMemory } from "@shared/repositories/inMemory/DatabaseInMemory";
 import { AppError } from "@shared/errors/AppError";
+import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
+import { InMemoryCacheProvider } from "@shared/container/providers/CacheProvider/implementations/InMemoryCacheProvider";
+import { DayjsDateProvider } from "@shared/container/providers/DateProvider/implementations/DayjsDateProvider";
 
 import { GetUserCompleteUseCase } from "./GetUserCompleteUseCase";
-import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
+
+let dateProvider: DayjsDateProvider;
+
+let cacheProvider: InMemoryCacheProvider;
 
 let databaseInMemory: DatabaseInMemory;
 
@@ -37,6 +44,8 @@ let getUserCompleteUseCase: GetUserCompleteUseCase;
 
 describe("Get User Complete", () => {
   beforeEach(() => {
+    dateProvider = new DayjsDateProvider();
+    cacheProvider = new InMemoryCacheProvider(dateProvider);
     databaseInMemory = new DatabaseInMemory();
     genderRepository = new GenderRepositoryInMemory(databaseInMemory);
     roleRepository = new RoleRepositoryInMemory(databaseInMemory);
@@ -49,7 +58,10 @@ describe("Get User Complete", () => {
     phoneRepository = new PhoneRepositoryInMemory(databaseInMemory);
     userRepository = new UserRepositoryInMemory(databaseInMemory);
 
-    getUserCompleteUseCase = new GetUserCompleteUseCase(userRepository);
+    getUserCompleteUseCase = new GetUserCompleteUseCase(
+      cacheProvider,
+      userRepository,
+    );
   });
 
   it("should be able to get a user complete", async () => {
@@ -121,11 +133,20 @@ describe("Get User Complete", () => {
 
     const userWithoutPassword = flatUserCompleteToUserWithoutPassword(userFlat);
 
+    const cacheKey = `${cachePrefixes.getUserComplete}:${userResponse.user_id}`;
+
+    const cacheValueBefore = await cacheProvider.cacheGet(cacheKey);
+
     const userComplete = await getUserCompleteUseCase.execute({
       user_id: userResponse.user_id,
     });
 
+    const cacheValueAfter = await cacheProvider.cacheGet(cacheKey);
+
     expect(userComplete).toEqual(userWithoutPassword);
+    expect(cacheValueBefore).toBeNull();
+    expect(cacheValueAfter).not.toBeNull();
+    expect(cacheValueAfter).toBe(JSON.stringify(userWithoutPassword));
   });
 
   it("should not be able to get a user complete with non-existent user", async () => {

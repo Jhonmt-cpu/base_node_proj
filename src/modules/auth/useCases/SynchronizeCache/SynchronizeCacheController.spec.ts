@@ -2,8 +2,9 @@ import request from "supertest";
 import { v4 as uuid } from "uuid";
 
 import testConfig from "@config/test";
+import { cachePrefixes } from "@config/cache";
 
-import auth from "@config/auth";
+import { redisRateLimiterClient } from "@utils/redisRateLimiter";
 
 import { GenderEntity } from "@modules/account/infra/knex/entities/GenderEntity";
 import { UserEntity } from "@modules/account/infra/knex/entities/UserEntity";
@@ -46,6 +47,7 @@ describe("Synchronize Cache Controller", () => {
   });
 
   afterAll(async () => {
+    redisRateLimiterClient.disconnect();
     await dbConnection.migrate.rollback();
     await dbConnection.destroy();
   });
@@ -171,7 +173,7 @@ describe("Synchronize Cache Controller", () => {
     const oldTokenInCache = uuid();
 
     await cacheProvider.cacheSet({
-      key: `${auth.refresh.cachePrefix}:${refreshTokenValid[0].refresh_token_id}`,
+      key: `${cachePrefixes.refreshToken}:${refreshTokenValid[0].refresh_token_id}`,
       value: JSON.stringify({
         user_id: userInsertResponse[0].user_id,
         user_name: user.user_name,
@@ -181,7 +183,7 @@ describe("Synchronize Cache Controller", () => {
     });
 
     await cacheProvider.cacheSet({
-      key: `${auth.refresh.cachePrefix}:${refreshTokenSecondValid[0].refresh_token_id}`,
+      key: `${cachePrefixes.refreshToken}:${refreshTokenSecondValid[0].refresh_token_id}`,
       value: JSON.stringify({
         user_id: user2InsertResponse[0].user_id,
         user_name: user2.user_name,
@@ -191,7 +193,7 @@ describe("Synchronize Cache Controller", () => {
     });
 
     await cacheProvider.cacheSet({
-      key: `${auth.refresh.cachePrefix}:${oldTokenInCache}`,
+      key: `${cachePrefixes.refreshToken}:${oldTokenInCache}`,
       value: JSON.stringify({
         user_id: user3InsertResponse[0].user_id,
         user_name: user3.user_name,
@@ -205,19 +207,19 @@ describe("Synchronize Cache Controller", () => {
       .set("Authorization", `Bearer ${token}`);
 
     const tokenCacheValid = await cacheProvider.cacheGet(
-      `${auth.refresh.cachePrefix}:${refreshTokenValid[0].refresh_token_id}`,
+      `${cachePrefixes.refreshToken}:${refreshTokenValid[0].refresh_token_id}`,
     );
 
     const tokenCacheSecondValid = await cacheProvider.cacheGet(
-      `${auth.refresh.cachePrefix}:${refreshTokenSecondValid[0].refresh_token_id}`,
+      `${cachePrefixes.refreshToken}:${refreshTokenSecondValid[0].refresh_token_id}`,
     );
 
     const tokenCacheExpired = await cacheProvider.cacheGet(
-      `${auth.refresh.cachePrefix}:${refreshTokenExpired[0].refresh_token_id}`,
+      `${cachePrefixes.refreshToken}:${refreshTokenExpired[0].refresh_token_id}`,
     );
 
     const oldTokenInCacheResponse = await cacheProvider.cacheGet(
-      `${auth.refresh.cachePrefix}:${oldTokenInCache}`,
+      `${cachePrefixes.refreshToken}:${oldTokenInCache}`,
     );
 
     const refreshTokenDeleted = await dbConnection<RefreshTokenEntity>(

@@ -1,5 +1,7 @@
 import { v4 as uuid } from "uuid";
 
+import { cachePrefixes } from "@config/cache";
+
 import { RefreshTokenRepositoryInMemory } from "@modules/auth/repositories/inMemory/RefreshTokenRepositoryInMemory";
 import { RoleRepositoryInMemory } from "@modules/account/repositories/inMemory/RoleRepositoryInMemory";
 import { UserRepositoryInMemory } from "@modules/account/repositories/inMemory/UserRepositoryInMemory";
@@ -10,7 +12,6 @@ import { DayjsDateProvider } from "@shared/container/providers/DateProvider/impl
 import { DatabaseInMemory } from "@shared/repositories/inMemory/DatabaseInMemory";
 
 import { SynchronizeCacheUseCase } from "./SynchronizeCacheUseCase";
-import auth from "@config/auth";
 
 let dateProvider: DayjsDateProvider;
 
@@ -94,7 +95,7 @@ describe("SynchronizeCacheUseCase", () => {
     const old_token_in_cache = uuid();
 
     await cacheProvider.cacheSet({
-      key: `${auth.refresh.cachePrefix}:${refresh_token_valid.refresh_token_id}`,
+      key: `${cachePrefixes.refreshToken}:${refresh_token_valid.refresh_token_id}`,
       value: JSON.stringify({
         user_id: user.user_id,
         user_name: user.user_name,
@@ -104,7 +105,7 @@ describe("SynchronizeCacheUseCase", () => {
     });
 
     await cacheProvider.cacheSet({
-      key: `${auth.refresh.cachePrefix}:${refresh_token_second_valid.refresh_token_id}`,
+      key: `${cachePrefixes.refreshToken}:${refresh_token_second_valid.refresh_token_id}`,
       value: JSON.stringify({
         user_id: user2.user_id,
         user_name: user2.user_name,
@@ -114,7 +115,7 @@ describe("SynchronizeCacheUseCase", () => {
     });
 
     await cacheProvider.cacheSet({
-      key: `${auth.refresh.cachePrefix}:${old_token_in_cache}`,
+      key: `${cachePrefixes.refreshToken}:${old_token_in_cache}`,
       value: JSON.stringify({
         user_id: user.user_id,
         user_name: user3.user_name,
@@ -126,19 +127,19 @@ describe("SynchronizeCacheUseCase", () => {
     await synchronizeCacheUseCase.execute();
 
     const tokenCacheValid = await cacheProvider.cacheGet(
-      `${auth.refresh.cachePrefix}:${refresh_token_valid.refresh_token_id}`,
+      `${cachePrefixes.refreshToken}:${refresh_token_valid.refresh_token_id}`,
     );
 
     const tokenCacheSecondValid = await cacheProvider.cacheGet(
-      `${auth.refresh.cachePrefix}:${refresh_token_second_valid.refresh_token_id}`,
+      `${cachePrefixes.refreshToken}:${refresh_token_second_valid.refresh_token_id}`,
     );
 
     const tokenCacheExpired = await cacheProvider.cacheGet(
-      `${auth.refresh.cachePrefix}:${refresh_token_expired.refresh_token_id}`,
+      `${cachePrefixes.refreshToken}:${refresh_token_expired.refresh_token_id}`,
     );
 
     const oldTokenInCache = await cacheProvider.cacheGet(
-      `${auth.refresh.cachePrefix}:${old_token_in_cache}`,
+      `${cachePrefixes.refreshToken}:${old_token_in_cache}`,
     );
 
     const tokenExpiredDeleted = await refreshTokenRepository.findById(

@@ -1,5 +1,7 @@
 import { inject, injectable } from "tsyringe";
 
+import { cachePrefixes } from "@config/cache";
+
 import { ICreateCityDTO } from "@modules/account/@types/ICreateCityDTO";
 import { ICityRepository } from "@modules/account/repositories/ICityRepository";
 
@@ -7,13 +9,15 @@ import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
 import { AppError } from "@shared/errors/AppError";
 
 import { IStateRepository } from "@modules/account/repositories/IStateRepository";
+import { ICacheProvider } from "@shared/container/providers/CacheProvider/ICacheProvider";
 
 @injectable()
 class CreateCityUseCase {
   constructor(
+    @inject("CacheProvider")
+    private cacheProvider: ICacheProvider,
     @inject("StateRepository")
     private stateRepository: IStateRepository,
-
     @inject("CityRepository")
     private cityRepository: ICityRepository,
   ) {}
@@ -38,6 +42,10 @@ class CreateCityUseCase {
       city_name,
       city_state_id,
     });
+
+    const cacheKey = `${cachePrefixes.listCitiesByState}:state_id:${city_state_id}`;
+
+    await this.cacheProvider.cacheDel(cacheKey);
 
     return city;
   }

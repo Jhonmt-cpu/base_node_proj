@@ -6,6 +6,8 @@ export enum AppErrorMessages {
   INVALID_TOKEN = "Invalid token!",
   ACCESS_DENIED_NOT_LOGGED = "Access Denied: You must be logged in",
   ACCESS_DENIED_HAS_NO_PERMISSION = "Access Denied: You do not have permission to perform this action",
+  TOO_MANY_REQUESTS = "Too many requests",
+  TOO_MANY_REQUESTS_TRY_AGAIN_LATER = "Too many requests, try again later",
 
   //Account
   ROLE_ALREADY_EXISTS = "Role already exists!",

@@ -1,5 +1,7 @@
 import { inject, injectable } from "tsyringe";
 
+import { cachePrefixes } from "@config/cache";
+
 import { IDeleteUserDTO } from "@modules/account/@types/IDeleteUserDTO";
 import { IUserRepository } from "@modules/account/repositories/IUserRepository";
 import { IRefreshTokenRepository } from "@modules/auth/repositories/IRefreshTokenRepository";
@@ -8,7 +10,6 @@ import { AppError } from "@shared/errors/AppError";
 import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
 import { ICacheProvider } from "@shared/container/providers/CacheProvider/ICacheProvider";
 
-import auth from "@config/auth";
 import { IHashProvider } from "@shared/container/providers/HashProvider/IHashProvider";
 
 @injectable()
@@ -51,11 +52,29 @@ class DeleteUserUseCase {
 
     for await (const refreshToken of refreshTokensRepository) {
       await this.cacheProvider.cacheDel(
-        `${auth.refresh.cachePrefix}:${refreshToken.refresh_token_id}`,
+        `${cachePrefixes.refreshToken}:${refreshToken.refresh_token_id}`,
       );
     }
 
     await this.userRepository.deleteById(user_id);
+
+    await this.cacheProvider.cacheDeleteAllByPrefix(
+      cachePrefixes.listAllUsersPaginated,
+    );
+
+    await this.cacheProvider.cacheDel(`${cachePrefixes.getUser}:${user_id}`);
+
+    await this.cacheProvider.cacheDel(
+      `${cachePrefixes.getUserAddress}:${user_id}`,
+    );
+
+    await this.cacheProvider.cacheDel(
+      `${cachePrefixes.getUserPhone}:${user_id}`,
+    );
+
+    await this.cacheProvider.cacheDel(
+      `${cachePrefixes.getUserComplete}:${user_id}`,
+    );
   }
 }
 

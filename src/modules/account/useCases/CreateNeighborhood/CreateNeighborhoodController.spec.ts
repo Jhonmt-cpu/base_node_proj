@@ -1,25 +1,34 @@
 import request from "supertest";
 
 import testConfig from "@config/test";
+import { cachePrefixes } from "@config/cache";
 
-import { dbConnection } from "@shared/infra/database/knex";
-import { app } from "@shared/infra/http/app";
+import { redisRateLimiterClient } from "@utils/redisRateLimiter";
 
 import { StateEntity } from "@modules/account/infra/knex/entities/StateEntity";
 import { CityEntity } from "@modules/account/infra/knex/entities/CityEntity";
 import { NeighborhoodEntity } from "@modules/account/infra/knex/entities/NeighborhoodEntity";
 
+import { dbConnection } from "@shared/infra/database/knex";
+import { app } from "@shared/infra/http/app";
 import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
+import { RedisCacheProvider } from "@shared/container/providers/CacheProvider/implementations/RedisCacheProvider";
+
+let cacheProvider: RedisCacheProvider;
 
 let token: string;
 
 describe("Create Neighborhood Controller", () => {
   beforeAll(async () => {
+    cacheProvider = new RedisCacheProvider();
+
     await dbConnection.migrate.latest();
     await dbConnection.seed.run();
   });
 
   beforeEach(async () => {
+    await cacheProvider.cacheFlushAll();
+
     const { user_test_admin } = testConfig;
 
     const loginResponse = await request(app).post("/auth/login").send({
@@ -31,11 +40,15 @@ describe("Create Neighborhood Controller", () => {
   });
 
   afterAll(async () => {
+    redisRateLimiterClient.disconnect();
+
+    await cacheProvider.cacheFlushAll();
+    await cacheProvider.cacheDisconnect();
     await dbConnection.migrate.rollback();
     await dbConnection.destroy();
   });
 
-  it("should be able to create a new neighborhood", async () => {
+  it("should be able to create a new neighborhood and erase cache", async () => {
     const state = await dbConnection<StateEntity>("tb_states")
       .insert({
         state_name: "New State",
@@ -58,6 +71,16 @@ describe("Create Neighborhood Controller", () => {
       throw new Error("City not created");
     }
 
+    const cacheKey = `${cachePrefixes.listNeighborhoodsByCity}:city_id:${city[0].city_id}`;
+
+    await cacheProvider.cacheSet({
+      key: cacheKey,
+      value: JSON.stringify([]),
+      expiresInSeconds: 60 * 60,
+    });
+
+    const cacheValueBefore = await cacheProvider.cacheGet(cacheKey);
+
     const response = await request(app)
       .post("/account/neighborhood")
       .send({
@@ -68,8 +91,12 @@ describe("Create Neighborhood Controller", () => {
         Authorization: `Bearer ${token}`,
       });
 
+    const cacheValueAfter = await cacheProvider.cacheGet(cacheKey);
+
     expect(response.status).toBe(201);
     expect(response.body).toHaveProperty("neighborhood_id");
+    expect(cacheValueBefore).not.toBeNull();
+    expect(cacheValueAfter).toBeNull();
   });
 
   it("should not be able to create a new neighborhood with invalid city", async () => {

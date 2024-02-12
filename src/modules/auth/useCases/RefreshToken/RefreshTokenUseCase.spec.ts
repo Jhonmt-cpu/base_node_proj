@@ -6,6 +6,7 @@ import { RefreshTokenRepositoryInMemory } from "@modules/auth/repositories/inMem
 import { InMemoryCacheProvider } from "@shared/container/providers/CacheProvider/implementations/InMemoryCacheProvider";
 
 import auth from "@config/auth";
+import { cachePrefixes } from "@config/cache";
 
 import { AppError } from "@shared/errors/AppError";
 import { DatabaseInMemory } from "@shared/repositories/inMemory/DatabaseInMemory";
@@ -64,7 +65,7 @@ describe("RefreshTokenUseCase", () => {
     });
 
     await cacheProvider.cacheSet({
-      key: `${auth.refresh.cachePrefix}:${refreshToken.refresh_token_id}`,
+      key: `${cachePrefixes.refreshToken}:${refreshToken.refresh_token_id}`,
       value: JSON.stringify(userData),
       expiresInSeconds: Number(auth.refresh.expiresInDays) * 24 * 60 * 60,
     });
@@ -91,7 +92,7 @@ describe("RefreshTokenUseCase", () => {
     });
 
     await cacheProvider.cacheSet({
-      key: `${auth.refresh.cachePrefix}:${refreshToken.refresh_token_id}`,
+      key: `${cachePrefixes.refreshToken}:${refreshToken.refresh_token_id}`,
       value: JSON.stringify(userData),
       expiresInSeconds: Number(auth.refresh.expiresInDays) * 24 * 60 * 60,
     });
@@ -131,7 +132,7 @@ describe("RefreshTokenUseCase", () => {
     const refresh_token = uuid();
 
     await cacheProvider.cacheSet({
-      key: `${auth.refresh.cachePrefix}:${refresh_token}`,
+      key: `${cachePrefixes.refreshToken}:${refresh_token}`,
       value: JSON.stringify({
         user_id: 1,
         user_name: "Test User",

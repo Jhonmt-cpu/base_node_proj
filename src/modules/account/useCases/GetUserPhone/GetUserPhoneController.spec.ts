@@ -1,25 +1,34 @@
 import request from "supertest";
 
 import testConfig from "@config/test";
+import { cachePrefixes } from "@config/cache";
 
-import { dbConnection } from "@shared/infra/database/knex";
-import { app } from "@shared/infra/http/app";
+import { redisRateLimiterClient } from "@utils/redisRateLimiter";
 
 import { GenderEntity } from "@modules/account/infra/knex/entities/GenderEntity";
 import { UserEntity } from "@modules/account/infra/knex/entities/UserEntity";
-
-import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
 import { PhoneEntity } from "@modules/account/infra/knex/entities/PhoneEntity";
+
+import { dbConnection } from "@shared/infra/database/knex";
+import { app } from "@shared/infra/http/app";
+import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
+import { RedisCacheProvider } from "@shared/container/providers/CacheProvider/implementations/RedisCacheProvider";
+
+let cacheProvider: RedisCacheProvider;
 
 let token: string;
 
 describe("Get User Phone Controller", () => {
   beforeAll(async () => {
+    cacheProvider = new RedisCacheProvider();
+
     await dbConnection.migrate.latest();
     await dbConnection.seed.run();
   });
 
   beforeEach(async () => {
+    await cacheProvider.cacheFlushAll();
+
     const { user_test_admin } = testConfig;
 
     const loginResponse = await request(app).post("/auth/login").send({
@@ -31,11 +40,15 @@ describe("Get User Phone Controller", () => {
   });
 
   afterAll(async () => {
+    redisRateLimiterClient.disconnect();
+
+    await cacheProvider.cacheFlushAll();
+    await cacheProvider.cacheDisconnect();
     await dbConnection.migrate.rollback();
     await dbConnection.destroy();
   });
 
-  it("should be able to get a user with an admin request", async () => {
+  it("should be able to get a user with an admin request and create cache", async () => {
     const gender = await dbConnection<GenderEntity>("tb_genders")
       .insert({
         gender_name: "New Gender",
@@ -75,15 +88,24 @@ describe("Get User Phone Controller", () => {
       throw new Error("User Phone not created");
     }
 
+    const cacheKey = `${cachePrefixes.getUserPhone}:${userInsertResponse[0].user_id}`;
+
+    const cacheValueBefore = await cacheProvider.cacheGet(cacheKey);
+
     const response = await request(app)
       .get(`/account/user/${userInsertResponse[0].user_id}/phone`)
       .set({
         Authorization: `Bearer ${token}`,
       });
 
+    const cacheValueAfter = await cacheProvider.cacheGet(cacheKey);
+
     expect(response.status).toBe(200);
     expect(response.body).toHaveProperty("user_phone_id");
     expect(response.body.user_phone_id).toBe(userInsertResponse[0].user_id);
+    expect(cacheValueBefore).toBeNull();
+    expect(cacheValueAfter).not.toBeNull();
+    expect(cacheValueAfter).toBe(JSON.stringify(response.body));
   });
 
   it("should not be able to get a user phone with an admin request if user does not exist", async () => {

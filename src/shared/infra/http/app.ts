@@ -4,6 +4,8 @@ import { errors } from "celebrate";
 import { AppError } from "@errors/AppError";
 import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
 
+import rateLimiter from "./middlewares/rateLimiter";
+
 import { router } from "./routes";
 
 import "@shared/container";
@@ -11,6 +13,8 @@ import "@shared/container";
 const app = express();
 
 app.use(express.json());
+
+app.use(rateLimiter);
 
 app.use(router);
 

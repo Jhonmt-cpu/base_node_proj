@@ -1,19 +1,36 @@
 import request from "supertest";
 
+import { cachePrefixes } from "@config/cache";
+
+import { redisRateLimiterClient } from "@utils/redisRateLimiter";
+
 import { StateEntity } from "@modules/account/infra/knex/entities/StateEntity";
 import { CityEntity } from "@modules/account/infra/knex/entities/CityEntity";
 
 import { dbConnection } from "@shared/infra/database/knex";
 import { app } from "@shared/infra/http/app";
 import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
+import { RedisCacheProvider } from "@shared/container/providers/CacheProvider/implementations/RedisCacheProvider";
+
+let cacheProvider: RedisCacheProvider;
 
 describe("List Cities By State Controller", () => {
   beforeAll(async () => {
+    cacheProvider = new RedisCacheProvider();
+
     await dbConnection.migrate.latest();
     await dbConnection.seed.run();
   });
 
+  beforeEach(async () => {
+    await cacheProvider.cacheFlushAll();
+  });
+
   afterAll(async () => {
+    redisRateLimiterClient.disconnect();
+
+    await cacheProvider.cacheFlushAll();
+    await cacheProvider.cacheDisconnect();
     await dbConnection.migrate.rollback();
     await dbConnection.destroy();
   });
@@ -52,12 +69,21 @@ describe("List Cities By State Controller", () => {
       city_created_at: city.city_created_at.toISOString(),
     }));
 
+    const cacheKey = `${cachePrefixes.listCitiesByState}:state_id:${state[0].state_id}`;
+
+    const cacheValueBefore = await cacheProvider.cacheGet(cacheKey);
+
     const response = await request(app).get(
       `/account/state/${state[0].state_id}/city`,
     );
 
+    const cacheValueAfter = await cacheProvider.cacheGet(cacheKey);
+
     expect(response.status).toBe(200);
     expect(response.body).toEqual(allCitiesWithDateStrings);
+    expect(cacheValueBefore).toBeNull();
+    expect(cacheValueAfter).not.toBeNull();
+    expect(cacheValueAfter).toEqual(JSON.stringify(response.body));
   });
 
   it("should return 204 if cities are empty", async () => {

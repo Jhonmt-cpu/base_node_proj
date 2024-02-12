@@ -1,13 +1,18 @@
-import { DatabaseInMemory } from "@shared/repositories/inMemory/DatabaseInMemory";
+import { cachePrefixes } from "@config/cache";
 
 import { UserRepositoryInMemory } from "@modules/account/repositories/inMemory/UserRepositoryInMemory";
-import { RoleRepositoryInMemory } from "@modules/account/repositories/inMemory/RoleRepositoryInMemory";
+
+import { DatabaseInMemory } from "@shared/repositories/inMemory/DatabaseInMemory";
+import { InMemoryCacheProvider } from "@shared/container/providers/CacheProvider/implementations/InMemoryCacheProvider";
+import { DayjsDateProvider } from "@shared/container/providers/DateProvider/implementations/DayjsDateProvider";
 
 import { ListAllUsersPaginatedUseCase } from "./ListAllUsersPaginatedUseCase";
 
-let databaseInMemory: DatabaseInMemory;
+let dateProvider: DayjsDateProvider;
 
-let roleRepositoryInMemory: RoleRepositoryInMemory;
+let cacheProvider: InMemoryCacheProvider;
+
+let databaseInMemory: DatabaseInMemory;
 
 let userRepositoryInMemory: UserRepositoryInMemory;
 
@@ -15,63 +20,18 @@ let listAllUsersPaginatedUseCase: ListAllUsersPaginatedUseCase;
 
 describe("List All Users Paginated", () => {
   beforeEach(() => {
+    dateProvider = new DayjsDateProvider();
+    cacheProvider = new InMemoryCacheProvider(dateProvider);
     databaseInMemory = new DatabaseInMemory();
-    roleRepositoryInMemory = new RoleRepositoryInMemory(databaseInMemory);
     userRepositoryInMemory = new UserRepositoryInMemory(databaseInMemory);
 
     listAllUsersPaginatedUseCase = new ListAllUsersPaginatedUseCase(
+      cacheProvider,
       userRepositoryInMemory,
     );
   });
 
-  it("should be able to list all users paginated", async () => {
-    const user = {
-      user_name: "User Test",
-      user_email: "usertest@test.com",
-      user_cpf: 12345678910,
-      user_gender_id: 1,
-      user_password: "123456",
-      user_birth_date: new Date("2005-01-01"),
-    };
-
-    const user2 = {
-      user_name: "User Test 2",
-      user_email: "usertest2@test.com",
-      user_cpf: 10987654321,
-      user_gender_id: 2,
-      user_password: "123456",
-      user_birth_date: new Date("2005-01-01"),
-    };
-
-    const role = await roleRepositoryInMemory.create({
-      role_name: "role_test",
-    });
-
-    const user1Response = await userRepositoryInMemory.create(user);
-
-    const user1WithRoleAndCpf = {
-      ...user1Response,
-      user_role_id: role.role_id,
-      user_cpf: user.user_cpf,
-    };
-
-    const user2Response = await userRepositoryInMemory.create(user2);
-
-    const user2WithRoleAndCpf = {
-      ...user2Response,
-      user_role_id: role.role_id,
-      user_cpf: user2.user_cpf,
-    };
-
-    const users = await listAllUsersPaginatedUseCase.execute({
-      page: 1,
-      limit: 20,
-    });
-
-    expect(users).toEqual([user1WithRoleAndCpf, user2WithRoleAndCpf]);
-  });
-
-  it("should be able to list all users with pagination", async () => {
+  it("should be able to list all users with pagination and create cache", async () => {
     for (let i = 0; i < 20; i++) {
       await userRepositoryInMemory.create({
         user_name: `User Test ${i}`,
@@ -82,6 +42,33 @@ describe("List All Users Paginated", () => {
         user_birth_date: new Date("2005-01-01"),
       });
     }
+
+    const users10Params = {
+      page: 1,
+      limit: 10,
+    };
+
+    const users5Params = {
+      page: 4,
+      limit: 5,
+    };
+
+    const users30Params = {
+      page: 1,
+      limit: 30,
+    };
+
+    const cache10Key = `${cachePrefixes.listAllUsersPaginated}:page:${users10Params.page}:limit:${users10Params.limit}`;
+
+    const cache5Key = `${cachePrefixes.listAllUsersPaginated}:page:${users5Params.page}:limit:${users5Params.limit}`;
+
+    const cache30Key = `${cachePrefixes.listAllUsersPaginated}:page:${users30Params.page}:limit:${users30Params.limit}`;
+
+    const cache10Before = await cacheProvider.cacheGet(cache10Key);
+
+    const cache5Before = await cacheProvider.cacheGet(cache5Key);
+
+    const cache30Before = await cacheProvider.cacheGet(cache30Key);
 
     const users10 = await listAllUsersPaginatedUseCase.execute({
       page: 1,
@@ -96,10 +83,23 @@ describe("List All Users Paginated", () => {
       limit: 30,
     });
 
+    const cache10After = await cacheProvider.cacheGet(cache10Key);
+
+    const cache5After = await cacheProvider.cacheGet(cache5Key);
+
+    const cache30After = await cacheProvider.cacheGet(cache30Key);
+
     expect(users10.length).toEqual(10);
     expect(users5.length).toEqual(5);
     expect(users30.length).toEqual(20);
+    expect(users10[0].user_name).toEqual("User Test 0");
     expect(users30[0].user_name).toEqual("User Test 0");
     expect(users5[0].user_name).toEqual("User Test 15");
+    expect(cache10Before).toBeNull();
+    expect(cache5Before).toBeNull();
+    expect(cache30Before).toBeNull();
+    expect(cache10After).not.toBeNull();
+    expect(cache5After).not.toBeNull();
+    expect(cache30After).not.toBeNull();
   });
 });

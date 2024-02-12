@@ -1,32 +1,47 @@
 import request from "supertest";
 
 import testConfig from "@config/test";
+import { cachePrefixes } from "@config/cache";
+
+import { redisRateLimiterClient } from "@utils/redisRateLimiter";
 
 import { GenderEntity } from "@modules/account/infra/knex/entities/GenderEntity";
 import { UserEntity } from "@modules/account/infra/knex/entities/UserEntity";
+import { PhoneEntity } from "@modules/account/infra/knex/entities/PhoneEntity";
 
 import { dbConnection } from "@shared/infra/database/knex";
 import { app } from "@shared/infra/http/app";
 import { BcryptjsHashProvider } from "@shared/container/providers/HashProvider/implementations/BcryptjsHashProvider";
 import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
-import { PhoneEntity } from "@modules/account/infra/knex/entities/PhoneEntity";
+import { RedisCacheProvider } from "@shared/container/providers/CacheProvider/implementations/RedisCacheProvider";
+
+let cacheProvider: RedisCacheProvider;
 
 let hashProvider: BcryptjsHashProvider;
 
 describe("Get User Phone Me Controller", () => {
   beforeAll(async () => {
+    cacheProvider = new RedisCacheProvider();
+    hashProvider = new BcryptjsHashProvider();
+
     await dbConnection.migrate.latest();
     await dbConnection.seed.run();
+  });
 
-    hashProvider = new BcryptjsHashProvider();
+  beforeEach(async () => {
+    await cacheProvider.cacheFlushAll();
   });
 
   afterAll(async () => {
+    redisRateLimiterClient.disconnect();
+
+    await cacheProvider.cacheFlushAll();
+    await cacheProvider.cacheDisconnect();
     await dbConnection.migrate.rollback();
     await dbConnection.destroy();
   });
 
-  it("should be able to get a user phone with authentication", async () => {
+  it("should be able to get a user phone with authentication and create cache", async () => {
     const { user_email, user_password } = testConfig.user_test;
 
     const authResponse = await request(app).post("/auth/login").send({
@@ -36,15 +51,24 @@ describe("Get User Phone Me Controller", () => {
 
     const { token: userToken, user } = authResponse.body;
 
+    const cacheKey = `${cachePrefixes.getUserPhone}:${user.user_id}`;
+
+    const cacheValueBefore = await cacheProvider.cacheGet(cacheKey);
+
     const response = await request(app)
       .get(`/account/user/me/phone`)
       .set({
         Authorization: `Bearer ${userToken}`,
       });
 
+    const cacheValueAfter = await cacheProvider.cacheGet(cacheKey);
+
     expect(response.status).toBe(200);
     expect(response.body).toHaveProperty("user_phone_id");
     expect(response.body.user_phone_id).toBe(user.user_id);
+    expect(cacheValueBefore).toBeNull();
+    expect(cacheValueAfter).not.toBeNull();
+    expect(cacheValueAfter).toBe(JSON.stringify(response.body));
   });
 
   it("should not be able to get a non existing user", async () => {

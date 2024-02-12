@@ -1,14 +1,19 @@
 import { inject, injectable } from "tsyringe";
 
+import { cachePrefixes } from "@config/cache";
+
 import { ICreateGenderDTO } from "@modules/account/@types/ICreateGenderDTO";
 import { IGenderRepository } from "@modules/account/repositories/IGenderRepository";
 
 import { AppError } from "@shared/errors/AppError";
 import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
+import { ICacheProvider } from "@shared/container/providers/CacheProvider/ICacheProvider";
 
 @injectable()
 class CreateGenderUseCase {
   constructor(
+    @inject("CacheProvider")
+    private cacheProvider: ICacheProvider,
     @inject("GenderRepository")
     private genderRepository: IGenderRepository,
   ) {}
@@ -25,6 +30,12 @@ class CreateGenderUseCase {
     const gender = await this.genderRepository.create({
       gender_name,
     });
+
+    await this.cacheProvider.cacheDel(cachePrefixes.listAllGenders);
+
+    await this.cacheProvider.cacheDeleteAllByPrefix(
+      cachePrefixes.listAllGendersPaginated,
+    );
 
     return gender;
   }

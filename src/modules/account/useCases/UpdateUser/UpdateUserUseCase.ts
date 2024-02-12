@@ -1,5 +1,7 @@
 import { inject, injectable } from "tsyringe";
 
+import { cachePrefixes } from "@config/cache";
+
 import { IUpdateUserDTO } from "@modules/account/@types/IUpdateUserDTO";
 import { IUpdateUserResponseDTO } from "@modules/account/@types/IUpdateUserResponseDTO";
 import { IGenderRepository } from "@modules/account/repositories/IGenderRepository";
@@ -7,18 +9,21 @@ import { IPhoneRepository } from "@modules/account/repositories/IPhoneRepository
 import { IAddressRepository } from "@modules/account/repositories/IAddressRepository";
 import { INeighborhoodRepository } from "@modules/account/repositories/INeighborhoodRepository";
 import { IUserRepository } from "@modules/account/repositories/IUserRepository";
-import { IHashProvider } from "@shared/container/providers/HashProvider/IHashProvider";
 
 import { UserEntity } from "@modules/account/infra/knex/entities/UserEntity";
 import { PhoneEntity } from "@modules/account/infra/knex/entities/PhoneEntity";
 import { AddressEntity } from "@modules/account/infra/knex/entities/AddressEntity";
 
+import { IHashProvider } from "@shared/container/providers/HashProvider/IHashProvider";
 import { AppError } from "@shared/errors/AppError";
 import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
+import { ICacheProvider } from "@shared/container/providers/CacheProvider/ICacheProvider";
 
 @injectable()
 class UpdateUserUseCase {
   constructor(
+    @inject("CacheProvider")
+    private cacheProvider: ICacheProvider,
     @inject("HashProvider")
     private hashProvider: IHashProvider,
     @inject("GenderRepository")
@@ -197,6 +202,12 @@ class UpdateUserUseCase {
         updateFields: updateUserFields,
       });
 
+      await this.cacheProvider.cacheDeleteAllByPrefix(
+        cachePrefixes.listAllUsersPaginated,
+      );
+
+      await this.cacheProvider.cacheDel(`${cachePrefixes.getUser}:${user_id}`);
+
       userUpdateResponse = {
         ...userUpdateResponse,
         ...updatedUser,
@@ -208,6 +219,10 @@ class UpdateUserUseCase {
         user_phone_id: user_id,
         updateFields: updatePhoneFields,
       });
+
+      await this.cacheProvider.cacheDel(
+        `${cachePrefixes.getUserPhone}:${user_id}`,
+      );
 
       userUpdateResponse = {
         ...userUpdateResponse,
@@ -221,10 +236,20 @@ class UpdateUserUseCase {
         updateFields: updateAddressFields,
       });
 
+      await this.cacheProvider.cacheDel(
+        `${cachePrefixes.getUserAddress}:${user_id}`,
+      );
+
       userUpdateResponse = {
         ...userUpdateResponse,
         user_address: updatedAddress,
       };
+    }
+
+    if (Object.keys(userUpdateResponse).length > 1) {
+      await this.cacheProvider.cacheDel(
+        `${cachePrefixes.getUserComplete}:${user_id}`,
+      );
     }
 
     return userUpdateResponse;

@@ -1,6 +1,7 @@
 import { inject, injectable } from "tsyringe";
 
 import auth from "@config/auth";
+import { cachePrefixes } from "@config/cache";
 
 import { ILoginDTO } from "@modules/auth/@types/ILoginDTO";
 import { IGenerateTokenProvider } from "@modules/auth/container/providers/GenerateTokenProvider/IGenerateTokenProvider";
@@ -58,7 +59,7 @@ class LoginUseCase {
 
     for await (const refreshToken of refreshTokensRepository) {
       await this.cacheProvider.cacheDel(
-        `${auth.refresh.cachePrefix}:${refreshToken.refresh_token_id}`,
+        `${cachePrefixes.refreshToken}:${refreshToken.refresh_token_id}`,
       );
     }
 
@@ -74,7 +75,7 @@ class LoginUseCase {
     });
 
     await this.cacheProvider.cacheSet({
-      key: `${auth.refresh.cachePrefix}:${refreshToken.refresh_token_id}`,
+      key: `${cachePrefixes.refreshToken}:${refreshToken.refresh_token_id}`,
       value: JSON.stringify({
         user_id: user.user_id,
         user_name: user.user_name,

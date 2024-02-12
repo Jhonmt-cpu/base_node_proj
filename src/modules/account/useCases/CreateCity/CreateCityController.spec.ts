@@ -1,14 +1,19 @@
 import request from "supertest";
 
 import testConfig from "@config/test";
+import { cachePrefixes } from "@config/cache";
 
-import { dbConnection } from "@shared/infra/database/knex";
-import { app } from "@shared/infra/http/app";
+import { redisRateLimiterClient } from "@utils/redisRateLimiter";
 
 import { StateEntity } from "@modules/account/infra/knex/entities/StateEntity";
 import { CityEntity } from "@modules/account/infra/knex/entities/CityEntity";
 
+import { dbConnection } from "@shared/infra/database/knex";
+import { app } from "@shared/infra/http/app";
 import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
+import { RedisCacheProvider } from "@shared/container/providers/CacheProvider/implementations/RedisCacheProvider";
+
+let cacheProvider: RedisCacheProvider;
 
 let token: string;
 
@@ -16,9 +21,13 @@ describe("Create City Controller", () => {
   beforeAll(async () => {
     await dbConnection.migrate.latest();
     await dbConnection.seed.run();
+
+    cacheProvider = new RedisCacheProvider();
   });
 
   beforeEach(async () => {
+    await cacheProvider.cacheFlushAll();
+
     const { user_test_admin } = testConfig;
 
     const loginResponse = await request(app).post("/auth/login").send({
@@ -30,11 +39,15 @@ describe("Create City Controller", () => {
   });
 
   afterAll(async () => {
+    redisRateLimiterClient.disconnect();
+
+    await cacheProvider.cacheFlushAll();
+    await cacheProvider.cacheDisconnect();
     await dbConnection.migrate.rollback();
     await dbConnection.destroy();
   });
 
-  it("should be able to create a new city", async () => {
+  it("should be able to create a new city an erase cache", async () => {
     const state = await dbConnection<StateEntity>("tb_states")
       .insert({
         state_name: "New State",
@@ -46,6 +59,16 @@ describe("Create City Controller", () => {
       throw new Error("State not created");
     }
 
+    const cacheKey = `${cachePrefixes.listCitiesByState}:state_id:${state[0].state_id}`;
+
+    await cacheProvider.cacheSet({
+      key: cacheKey,
+      value: JSON.stringify([]),
+      expiresInSeconds: 60 * 60,
+    });
+
+    const cacheValueBefore = await cacheProvider.cacheGet(cacheKey);
+
     const response = await request(app)
       .post("/account/city")
       .send({
@@ -56,8 +79,12 @@ describe("Create City Controller", () => {
         Authorization: `Bearer ${token}`,
       });
 
+    const cacheValue = await cacheProvider.cacheGet(cacheKey);
+
     expect(response.status).toBe(201);
     expect(response.body).toHaveProperty("city_id");
+    expect(cacheValueBefore).not.toBeNull();
+    expect(cacheValue).toBeNull();
   });
 
   it("should not be able to create a new city with invalid state", async () => {

@@ -1,23 +1,32 @@
 import request from "supertest";
 
 import testConfig from "@config/test";
+import { cachePrefixes } from "@config/cache";
+
+import { redisRateLimiterClient } from "@utils/redisRateLimiter";
 
 import { dbConnection } from "@shared/infra/database/knex";
 import { app } from "@shared/infra/http/app";
+import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
 
 import { RoleEntity } from "@modules/account/infra/knex/entities/RoleEntity";
+import { RedisCacheProvider } from "@shared/container/providers/CacheProvider/implementations/RedisCacheProvider";
 
-import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
+let cacheProvider: RedisCacheProvider;
 
 let token: string;
 
 describe("Create Role Controller", () => {
   beforeAll(async () => {
+    cacheProvider = new RedisCacheProvider();
+
     await dbConnection.migrate.latest();
     await dbConnection.seed.run();
   });
 
   beforeEach(async () => {
+    await cacheProvider.cacheFlushAll();
+
     const { user_test_admin } = testConfig;
 
     const loginResponse = await request(app).post("/auth/login").send({
@@ -29,11 +38,25 @@ describe("Create Role Controller", () => {
   });
 
   afterAll(async () => {
+    redisRateLimiterClient.disconnect();
+
+    await cacheProvider.cacheFlushAll();
+    await cacheProvider.cacheDisconnect();
     await dbConnection.migrate.rollback();
     await dbConnection.destroy();
   });
 
-  it("should be able to create a new role", async () => {
+  it("should be able to create a new role and erase cache", async () => {
+    const cacheKey = `${cachePrefixes.listAllRolesPaginated}`;
+
+    await cacheProvider.cacheSet({
+      key: cacheKey,
+      value: JSON.stringify([]),
+      expiresInSeconds: 60 * 60,
+    });
+
+    const cacheValueBefore = await cacheProvider.cacheGet(cacheKey);
+
     const response = await request(app)
       .post("/account/role")
       .send({
@@ -43,8 +66,12 @@ describe("Create Role Controller", () => {
         Authorization: `Bearer ${token}`,
       });
 
+    const cacheValueAfter = await cacheProvider.cacheGet(cacheKey);
+
     expect(response.status).toBe(201);
     expect(response.body).toHaveProperty("role_id");
+    expect(cacheValueBefore).not.toBe(null);
+    expect(cacheValueAfter).toBe(null);
   });
 
   it("should not be able to create a role if name already exists", async () => {

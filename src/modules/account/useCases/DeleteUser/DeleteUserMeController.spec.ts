@@ -1,5 +1,9 @@
 import request from "supertest";
 
+import { cachePrefixes } from "@config/cache";
+
+import { redisRateLimiterClient } from "@utils/redisRateLimiter";
+
 import { UserEntity } from "@modules/account/infra/knex/entities/UserEntity";
 import { GenderEntity } from "@modules/account/infra/knex/entities/GenderEntity";
 import { StateEntity } from "@modules/account/infra/knex/entities/StateEntity";
@@ -7,16 +11,13 @@ import { CityEntity } from "@modules/account/infra/knex/entities/CityEntity";
 import { NeighborhoodEntity } from "@modules/account/infra/knex/entities/NeighborhoodEntity";
 import { AddressEntity } from "@modules/account/infra/knex/entities/AddressEntity";
 import { PhoneEntity } from "@modules/account/infra/knex/entities/PhoneEntity";
+import { RefreshTokenEntity } from "@modules/auth/infra/knex/entities/RefreshTokenEntity";
 
 import { RedisCacheProvider } from "@shared/container/providers/CacheProvider/implementations/RedisCacheProvider";
 import { BcryptjsHashProvider } from "@shared/container/providers/HashProvider/implementations/BcryptjsHashProvider";
 import { dbConnection } from "@shared/infra/database/knex";
 import { app } from "@shared/infra/http/app";
-
 import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
-import { RefreshTokenEntity } from "@modules/auth/infra/knex/entities/RefreshTokenEntity";
-
-import auth from "@config/auth";
 
 let hashProvider: BcryptjsHashProvider;
 
@@ -32,11 +33,12 @@ describe("Delete User Me Controller", () => {
   });
 
   afterAll(async () => {
+    redisRateLimiterClient.disconnect();
     await dbConnection.migrate.rollback();
     await dbConnection.destroy();
   });
 
-  it("should be able to delete a user with the password", async () => {
+  it("should be able to delete a user with the password and erase cache", async () => {
     const gender = await dbConnection<GenderEntity>("tb_genders")
       .insert({
         gender_name: "New Gender 2",
@@ -112,6 +114,68 @@ describe("Delete User Me Controller", () => {
       phone_ddd: 34,
     });
 
+    const cacheGetUserKey = `${cachePrefixes.getUser}:${userInsertResponse[0].user_id}`;
+
+    const cacheGetUserAddressKey = `${cachePrefixes.getUserAddress}:${userInsertResponse[0].user_id}`;
+
+    const cacheGetUserPhoneKey = `${cachePrefixes.getUserPhone}:${userInsertResponse[0].user_id}`;
+
+    const cacheGetUserCompleteKey = `${cachePrefixes.getUserComplete}:${userInsertResponse[0].user_id}`;
+
+    const cacheListAllUsersPaginatedKey = `${cachePrefixes.listAllUsersPaginated}`;
+
+    await cacheProvider.cacheSet({
+      key: cacheGetUserKey,
+      value: JSON.stringify(userInsertResponse[0]),
+      expiresInSeconds: 60 * 60,
+    });
+
+    await cacheProvider.cacheSet({
+      key: cacheGetUserAddressKey,
+      value: JSON.stringify({}),
+      expiresInSeconds: 60 * 60,
+    });
+
+    await cacheProvider.cacheSet({
+      key: cacheGetUserPhoneKey,
+      value: JSON.stringify({}),
+      expiresInSeconds: 60 * 60,
+    });
+
+    await cacheProvider.cacheSet({
+      key: cacheGetUserCompleteKey,
+      value: JSON.stringify({
+        user: userInsertResponse[0],
+        address: {},
+        phone: {},
+      }),
+      expiresInSeconds: 60 * 60,
+    });
+
+    await cacheProvider.cacheSet({
+      key: cacheListAllUsersPaginatedKey,
+      value: JSON.stringify([]),
+      expiresInSeconds: 60 * 60,
+    });
+
+    const cacheGetUserBefore = await cacheProvider.cacheGet(cacheGetUserKey);
+
+    const cacheGetUserAddressBefore = await cacheProvider.cacheGet(
+      cacheGetUserAddressKey,
+    );
+
+    const cacheGetUserPhoneBefore = await cacheProvider.cacheGet(
+      cacheGetUserPhoneKey,
+    );
+
+    const cacheGetUserCompleteBefore = await cacheProvider.cacheGet(
+      cacheGetUserCompleteKey,
+    );
+
+    const cacheListAllUsersPaginatedBefore = await cacheProvider.cacheGet(
+      cacheListAllUsersPaginatedKey,
+    );
+
     const userLoginResponse = await request(app).post("/auth/login").send({
       user_email: user.user_email,
       user_password: user.user_password,
@@ -144,7 +208,7 @@ describe("Delete User Me Controller", () => {
       });
 
     const refreshTokenCacheDeleted = await cacheProvider.cacheGet(
-      `${auth.refresh.cachePrefix}:${refresh_token}`,
+      `${cachePrefixes.refreshToken}:${refresh_token}`,
     );
 
     const userPhoneDeleted = await dbConnection<PhoneEntity>("tb_phones")
@@ -161,12 +225,36 @@ describe("Delete User Me Controller", () => {
       })
       .first();
 
+    const cacheGetUserAfter = await cacheProvider.cacheGet(cacheGetUserKey);
+    const cacheGetUserAddressAfter = await cacheProvider.cacheGet(
+      cacheGetUserAddressKey,
+    );
+    const cacheGetUserPhoneAfter = await cacheProvider.cacheGet(
+      cacheGetUserPhoneKey,
+    );
+    const cacheGetUserCompleteAfter = await cacheProvider.cacheGet(
+      cacheGetUserCompleteKey,
+    );
+    const cacheListAllUsersPaginatedAfter = await cacheProvider.cacheGet(
+      cacheListAllUsersPaginatedKey,
+    );
+
     expect(response.status).toBe(204);
     expect(userDeleted).toBeUndefined();
     expect(refreshTokensDeleted).toHaveLength(0);
     expect(refreshTokenCacheDeleted).toBeNull();
     expect(userPhoneDeleted).toBeUndefined();
     expect(userAddressDeleted).toBeUndefined();
+    expect(cacheGetUserBefore).not.toBeNull();
+    expect(cacheGetUserAfter).toBeNull();
+    expect(cacheGetUserAddressBefore).not.toBeNull();
+    expect(cacheGetUserAddressAfter).toBeNull();
+    expect(cacheGetUserPhoneBefore).not.toBeNull();
+    expect(cacheGetUserPhoneAfter).toBeNull();
+    expect(cacheGetUserCompleteBefore).not.toBeNull();
+    expect(cacheGetUserCompleteAfter).toBeNull();
+    expect(cacheListAllUsersPaginatedBefore).not.toBeNull();
+    expect(cacheListAllUsersPaginatedAfter).toBeNull();
   });
 
   it("should not be able to delete a user with the wrong password", async () => {
@@ -277,7 +365,7 @@ describe("Delete User Me Controller", () => {
       });
 
     const refreshTokenCacheDeleted = await cacheProvider.cacheGet(
-      `${auth.refresh.cachePrefix}:${refresh_token}`,
+      `${cachePrefixes.refreshToken}:${refresh_token}`,
     );
 
     const userPhoneDeleted = await dbConnection<PhoneEntity>("tb_phones")

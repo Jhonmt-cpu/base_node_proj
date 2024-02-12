@@ -1,23 +1,31 @@
 import request from "supertest";
 
 import testConfig from "@config/test";
+import { cachePrefixes } from "@config/cache";
 
-import { dbConnection } from "@shared/infra/database/knex";
-import { app } from "@shared/infra/http/app";
+import { redisRateLimiterClient } from "@utils/redisRateLimiter";
 
 import { GenderEntity } from "@modules/account/infra/knex/entities/GenderEntity";
 
+import { dbConnection } from "@shared/infra/database/knex";
+import { app } from "@shared/infra/http/app";
 import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
+import { RedisCacheProvider } from "@shared/container/providers/CacheProvider/implementations/RedisCacheProvider";
+
+let cacheProvider: RedisCacheProvider;
 
 let token: string;
 
 describe("Create Gender Controller", () => {
   beforeAll(async () => {
+    cacheProvider = new RedisCacheProvider();
     await dbConnection.migrate.latest();
     await dbConnection.seed.run();
   });
 
   beforeEach(async () => {
+    await cacheProvider.cacheFlushAll();
+
     const { user_test_admin } = testConfig;
 
     const loginResponse = await request(app).post("/auth/login").send({
@@ -29,11 +37,38 @@ describe("Create Gender Controller", () => {
   });
 
   afterAll(async () => {
+    redisRateLimiterClient.disconnect();
+
+    await cacheProvider.cacheFlushAll();
+    await cacheProvider.cacheDisconnect();
     await dbConnection.migrate.rollback();
     await dbConnection.destroy();
   });
 
-  it("should be able to create a new gender", async () => {
+  it("should be able to create a new gender and erase cache", async () => {
+    const cacheKeyListAllGenders = cachePrefixes.listAllGenders;
+
+    const cacheKeyListAllGendersPaginated = `${cachePrefixes.listAllGendersPaginated}:page:1:limit:10`;
+
+    await cacheProvider.cacheSet({
+      key: cacheKeyListAllGenders,
+      value: JSON.stringify([]),
+      expiresInSeconds: 60 * 60,
+    });
+
+    await cacheProvider.cacheSet({
+      key: cacheKeyListAllGendersPaginated,
+      value: JSON.stringify([]),
+      expiresInSeconds: 60 * 60,
+    });
+
+    const cacheValueBeforeListAllGenders = await cacheProvider.cacheGet(
+      cacheKeyListAllGenders,
+    );
+
+    const cacheValueBeforeListAllGendersPaginated =
+      await cacheProvider.cacheGet(cacheKeyListAllGendersPaginated);
+
     const response = await request(app)
       .post("/account/gender")
       .send({
@@ -43,8 +78,20 @@ describe("Create Gender Controller", () => {
         Authorization: `Bearer ${token}`,
       });
 
+    const cacheValueAfterListAllGenders = await cacheProvider.cacheGet(
+      cacheKeyListAllGenders,
+    );
+
+    const cacheValueAfterListAllGendersPaginated = await cacheProvider.cacheGet(
+      cacheKeyListAllGendersPaginated,
+    );
+
     expect(response.status).toBe(201);
     expect(response.body).toHaveProperty("gender_id");
+    expect(cacheValueBeforeListAllGenders).not.toBeNull();
+    expect(cacheValueBeforeListAllGendersPaginated).not.toBeNull();
+    expect(cacheValueAfterListAllGenders).toBeNull();
+    expect(cacheValueAfterListAllGendersPaginated).toBeNull();
   });
 
   it("should not be able to create a gender if name already exists", async () => {

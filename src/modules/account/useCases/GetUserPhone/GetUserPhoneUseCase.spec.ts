@@ -1,12 +1,19 @@
-import { DatabaseInMemory } from "@shared/repositories/inMemory/DatabaseInMemory";
+import { cachePrefixes } from "@config/cache";
 
 import { PhoneRepositoryInMemory } from "@modules/account/repositories/inMemory/PhoneRepositoryInMemory";
 import { UserRepositoryInMemory } from "@modules/account/repositories/inMemory/UserRepositoryInMemory";
 
+import { DatabaseInMemory } from "@shared/repositories/inMemory/DatabaseInMemory";
 import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
 import { AppError } from "@shared/errors/AppError";
+import { DayjsDateProvider } from "@shared/container/providers/DateProvider/implementations/DayjsDateProvider";
+import { InMemoryCacheProvider } from "@shared/container/providers/CacheProvider/implementations/InMemoryCacheProvider";
 
 import { GetUserPhoneUseCase } from "./GetUserPhoneUseCase";
+
+let dateProvider: DayjsDateProvider;
+
+let cacheProvider: InMemoryCacheProvider;
 
 let databaseInMemory: DatabaseInMemory;
 
@@ -18,14 +25,19 @@ let getUserPhoneUseCase: GetUserPhoneUseCase;
 
 describe("GetUserPhoneUseCase", () => {
   beforeEach(() => {
+    dateProvider = new DayjsDateProvider();
+    cacheProvider = new InMemoryCacheProvider(dateProvider);
     databaseInMemory = new DatabaseInMemory();
     userRepositoryInMemory = new UserRepositoryInMemory(databaseInMemory);
     phoneRepositoryInMemory = new PhoneRepositoryInMemory(databaseInMemory);
 
-    getUserPhoneUseCase = new GetUserPhoneUseCase(phoneRepositoryInMemory);
+    getUserPhoneUseCase = new GetUserPhoneUseCase(
+      cacheProvider,
+      phoneRepositoryInMemory,
+    );
   });
 
-  it("should be able to get a user phone", async () => {
+  it("should be able to get a user phone and create cache", async () => {
     const user = await userRepositoryInMemory.create({
       user_name: "User Test",
       user_email: "usertest@test.com",
@@ -41,12 +53,20 @@ describe("GetUserPhoneUseCase", () => {
       phone_ddd: 11,
     });
 
+    const cacheKey = `${cachePrefixes.getUserPhone}:${user.user_id}`;
+
+    const cacheValueBefore = await cacheProvider.cacheGet(cacheKey);
+
     const phone = await getUserPhoneUseCase.execute({
       user_id: user.user_id,
     });
 
+    const cacheValueAfter = await cacheProvider.cacheGet(cacheKey);
+
     expect(phone).toHaveProperty("user_phone_id");
     expect(phone.user_phone_id).toEqual(user.user_id);
+    expect(cacheValueBefore).toBeNull();
+    expect(cacheValueAfter).not.toBeNull();
   });
 
   it("should not be able to get a user phone if it does not exists", async () => {

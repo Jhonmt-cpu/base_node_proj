@@ -2,8 +2,9 @@ import request from "supertest";
 import { v4 as uuid } from "uuid";
 
 import testConfig from "@config/test";
+import { cachePrefixes } from "@config/cache";
 
-import auth from "@config/auth";
+import { redisRateLimiterClient } from "@utils/redisRateLimiter";
 
 import { RedisCacheProvider } from "@shared/container/providers/CacheProvider/implementations/RedisCacheProvider";
 import { dbConnection } from "@shared/infra/database/knex";
@@ -21,6 +22,7 @@ describe("Refresh Token Controller", () => {
   });
 
   afterAll(async () => {
+    redisRateLimiterClient.disconnect();
     await dbConnection.migrate.rollback();
     await dbConnection.destroy();
   });
@@ -40,11 +42,11 @@ describe("Refresh Token Controller", () => {
     });
 
     const refreshTokenCacheOld = await cacheProvider.cacheGet(
-      `${auth.refresh.cachePrefix}:${loginResponse.body.refresh_token}`,
+      `${cachePrefixes.refreshToken}:${loginResponse.body.refresh_token}`,
     );
 
     const refreshTokenCache = await cacheProvider.cacheGet(
-      `${auth.refresh.cachePrefix}:${response.body.refresh_token}`,
+      `${cachePrefixes.refreshToken}:${response.body.refresh_token}`,
     );
 
     expect(response.status).toBe(200);
@@ -91,7 +93,7 @@ describe("Refresh Token Controller", () => {
     const refresh_token = uuid();
 
     await cacheProvider.cacheSet({
-      key: `${auth.refresh.cachePrefix}:${refresh_token}`,
+      key: `${cachePrefixes.refreshToken}:${refresh_token}`,
       value: JSON.stringify({
         user_id: 1,
         user_name: "Test User",

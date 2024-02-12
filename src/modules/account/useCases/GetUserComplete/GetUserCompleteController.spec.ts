@@ -1,12 +1,11 @@
 import request from "supertest";
 
 import testConfig from "@config/test";
+import { cachePrefixes } from "@config/cache";
 
-import { dbConnection } from "@shared/infra/database/knex";
-import { app } from "@shared/infra/http/app";
+import { redisRateLimiterClient } from "@utils/redisRateLimiter";
 
 import { StateEntity } from "@modules/account/infra/knex/entities/StateEntity";
-
 import { GenderEntity } from "@modules/account/infra/knex/entities/GenderEntity";
 import { CityEntity } from "@modules/account/infra/knex/entities/CityEntity";
 import { NeighborhoodEntity } from "@modules/account/infra/knex/entities/NeighborhoodEntity";
@@ -14,17 +13,26 @@ import { UserEntity } from "@modules/account/infra/knex/entities/UserEntity";
 import { AddressEntity } from "@modules/account/infra/knex/entities/AddressEntity";
 import { PhoneEntity } from "@modules/account/infra/knex/entities/PhoneEntity";
 
+import { dbConnection } from "@shared/infra/database/knex";
+import { app } from "@shared/infra/http/app";
 import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
+import { RedisCacheProvider } from "@shared/container/providers/CacheProvider/implementations/RedisCacheProvider";
+
+let cacheProvider: RedisCacheProvider;
 
 let token: string;
 
 describe("Get User Complete Controller", () => {
   beforeAll(async () => {
+    cacheProvider = new RedisCacheProvider();
+
     await dbConnection.migrate.latest();
     await dbConnection.seed.run();
   });
 
   beforeEach(async () => {
+    await cacheProvider.cacheFlushAll();
+
     const { user_test_admin } = testConfig;
 
     const loginResponse = await request(app).post("/auth/login").send({
@@ -36,6 +44,10 @@ describe("Get User Complete Controller", () => {
   });
 
   afterAll(async () => {
+    redisRateLimiterClient.disconnect();
+
+    await cacheProvider.cacheFlushAll();
+    await cacheProvider.cacheDisconnect();
     await dbConnection.migrate.rollback();
     await dbConnection.destroy();
   });
@@ -131,17 +143,26 @@ describe("Get User Complete Controller", () => {
       throw new Error("User Phone not created");
     }
 
+    const cacheKey = `${cachePrefixes.getUserComplete}:${userInsertResponse[0].user_id}`;
+
+    const cacheValueBefore = await cacheProvider.cacheGet(cacheKey);
+
     const response = await request(app)
       .get(`/account/user/${userInsertResponse[0].user_id}/complete`)
       .set({
         Authorization: `Bearer ${token}`,
       });
 
+    const cacheValueAfter = await cacheProvider.cacheGet(cacheKey);
+
     expect(response.status).toBe(200);
     expect(response.body).toHaveProperty("address");
     expect(response.body).toHaveProperty("phone");
     expect(response.body).toHaveProperty("user_id");
     expect(response.body.user_id).toBe(userInsertResponse[0].user_id);
+    expect(cacheValueBefore).toBeNull();
+    expect(cacheValueAfter).not.toBeNull();
+    expect(cacheValueAfter).toBe(JSON.stringify(response.body));
   });
 
   it("should not be able to get a user complete with an admin request if user does not exist", async () => {

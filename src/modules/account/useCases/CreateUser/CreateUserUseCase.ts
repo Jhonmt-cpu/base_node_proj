@@ -1,5 +1,7 @@
 import { inject, injectable } from "tsyringe";
 
+import { cachePrefixes } from "@config/cache";
+
 import { IAddressRepository } from "@modules/account/repositories/IAddressRepository";
 import { IGenderRepository } from "@modules/account/repositories/IGenderRepository";
 import { INeighborhoodRepository } from "@modules/account/repositories/INeighborhoodRepository";
@@ -11,10 +13,13 @@ import { IHashProvider } from "@shared/container/providers/HashProvider/IHashPro
 
 import { AppError } from "@shared/errors/AppError";
 import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
+import { ICacheProvider } from "@shared/container/providers/CacheProvider/ICacheProvider";
 
 @injectable()
 class CreateUserUseCase {
   constructor(
+    @inject("CacheProvider")
+    private cacheProvider: ICacheProvider,
     @inject("HashProvider")
     private hashProvider: IHashProvider,
     @inject("DateProvider")
@@ -38,8 +43,8 @@ class CreateUserUseCase {
     user_gender_id,
     user_password,
     user_birth_date,
-    user_phone: phone,
-    user_address: address,
+    user_phone,
+    user_address,
   }: ICreateUserDTO) {
     const differenceInYear = this.dateProvider.getDifferenceInYears({
       start_date: user_birth_date,
@@ -62,7 +67,7 @@ class CreateUserUseCase {
       address_street,
       address_zip_code,
       address_complement,
-    } = address;
+    } = user_address;
 
     const neighborhoodExists = await this.neighborhoodRepository.findById(
       address_neighborhood_id,
@@ -72,7 +77,7 @@ class CreateUserUseCase {
       throw new AppError(AppErrorMessages.NEIGHBORHOOD_NOT_FOUND, 404);
     }
 
-    const { phone_ddd, phone_number } = phone;
+    const { phone_ddd, phone_number } = user_phone;
 
     const phoneAlreadyExists = await this.phoneRepository.findByDDDAndNumber({
       phone_ddd,
@@ -119,6 +124,10 @@ class CreateUserUseCase {
       address_zip_code,
       user_address_id: user.user_id,
     });
+
+    await this.cacheProvider.cacheDeleteAllByPrefix(
+      cachePrefixes.listAllUsersPaginated,
+    );
 
     return user;
   }

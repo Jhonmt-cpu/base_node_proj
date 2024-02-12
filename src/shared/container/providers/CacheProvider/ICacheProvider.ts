@@ -13,6 +13,7 @@ type ICacheProvider = {
   cacheDeleteAllByPrefix(prefix: string): Promise<void>;
   cacheGetAllByPrefix(prefix: string): Promise<string[]>;
   cacheDeleteAllBySuffix(suffix: string): Promise<void>;
+  cacheDisconnect(): Promise<void>;
 };
 
 export { ICacheProvider, ICacheSet };

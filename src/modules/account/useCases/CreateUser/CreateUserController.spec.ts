@@ -1,29 +1,44 @@
 import request from "supertest";
 
-import { dbConnection } from "@shared/infra/database/knex";
-import { app } from "@shared/infra/http/app";
+import test from "@config/test";
+import { cachePrefixes } from "@config/cache";
+
+import { redisRateLimiterClient } from "@utils/redisRateLimiter";
 
 import { StateEntity } from "@modules/account/infra/knex/entities/StateEntity";
 import { GenderEntity } from "@modules/account/infra/knex/entities/GenderEntity";
 import { CityEntity } from "@modules/account/infra/knex/entities/CityEntity";
 import { NeighborhoodEntity } from "@modules/account/infra/knex/entities/NeighborhoodEntity";
 
+import { dbConnection } from "@shared/infra/database/knex";
+import { app } from "@shared/infra/http/app";
 import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
+import { RedisCacheProvider } from "@shared/container/providers/CacheProvider/implementations/RedisCacheProvider";
 
-import test from "@config/test";
+let cacheProvider: RedisCacheProvider;
 
 describe("Create User Controller", () => {
   beforeAll(async () => {
+    cacheProvider = new RedisCacheProvider();
+
     await dbConnection.migrate.latest();
     await dbConnection.seed.run();
   });
 
+  beforeEach(async () => {
+    await cacheProvider.cacheFlushAll();
+  });
+
   afterAll(async () => {
+    redisRateLimiterClient.disconnect();
+
+    await cacheProvider.cacheFlushAll();
+    await cacheProvider.cacheDisconnect();
     await dbConnection.migrate.rollback();
     await dbConnection.destroy();
   });
 
-  it("should be able to create a new user", async () => {
+  it("should be able to create a new user and erase cache", async () => {
     const gender = await dbConnection<GenderEntity>("tb_genders")
       .insert({
         gender_name: "New Gender",
@@ -69,6 +84,16 @@ describe("Create User Controller", () => {
       throw new Error("Neighborhood not created");
     }
 
+    const cacheKey = cachePrefixes.listAllUsersPaginated;
+
+    await cacheProvider.cacheSet({
+      key: cacheKey,
+      value: JSON.stringify([]),
+      expiresInSeconds: 60 * 60,
+    });
+
+    const cacheValueBefore = await cacheProvider.cacheGet(cacheKey);
+
     const response = await request(app)
       .post("/account/user")
       .send({
@@ -88,8 +113,12 @@ describe("Create User Controller", () => {
         },
       });
 
+    const cacheValueAfter = await cacheProvider.cacheGet(cacheKey);
+
     expect(response.status).toBe(201);
     expect(response.body).toHaveProperty("user_id");
+    expect(cacheValueBefore).not.toBeNull();
+    expect(cacheValueAfter).toBeNull();
   });
 
   it("should not be able to create a new user with invalid birth date", async () => {

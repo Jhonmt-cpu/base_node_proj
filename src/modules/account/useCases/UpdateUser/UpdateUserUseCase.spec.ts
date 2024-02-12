@@ -1,16 +1,23 @@
-import { DatabaseInMemory } from "@shared/repositories/inMemory/DatabaseInMemory";
+import { cachePrefixes } from "@config/cache";
 
 import { GenderRepositoryInMemory } from "@modules/account/repositories/inMemory/GenderRepositoryInMemory";
 import { PhoneRepositoryInMemory } from "@modules/account/repositories/inMemory/PhoneRepositoryInMemory";
 import { NeighborHoodRepositoryInMemory } from "@modules/account/repositories/inMemory/NeighborhoodRepositoryInMemory";
 import { UserRepositoryInMemory } from "@modules/account/repositories/inMemory/UserRepositoryInMemory";
 import { AddressRepositoryInMemory } from "@modules/account/repositories/inMemory/AddressRepositoryInMemory";
-import { InMemoryHashProvider } from "@shared/container/providers/HashProvider/implementations/InMemoryHashProvider";
 
+import { DatabaseInMemory } from "@shared/repositories/inMemory/DatabaseInMemory";
+import { InMemoryHashProvider } from "@shared/container/providers/HashProvider/implementations/InMemoryHashProvider";
 import { AppError } from "@shared/errors/AppError";
+import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
+import { DayjsDateProvider } from "@shared/container/providers/DateProvider/implementations/DayjsDateProvider";
+import { InMemoryCacheProvider } from "@shared/container/providers/CacheProvider/implementations/InMemoryCacheProvider";
 
 import { UpdateUserUseCase } from "./UpdateUserUseCase";
-import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
+
+let dateProvider: DayjsDateProvider;
+
+let cacheProvider: InMemoryCacheProvider;
 
 let databaseInMemory: DatabaseInMemory;
 
@@ -30,6 +37,8 @@ let updateUserUseCase: UpdateUserUseCase;
 
 describe("Update User", () => {
   beforeEach(() => {
+    dateProvider = new DayjsDateProvider();
+    cacheProvider = new InMemoryCacheProvider(dateProvider);
     databaseInMemory = new DatabaseInMemory();
     hashProvider = new InMemoryHashProvider();
     genderRepositoryInMemory = new GenderRepositoryInMemory(databaseInMemory);
@@ -41,6 +50,7 @@ describe("Update User", () => {
     userRepositoryInMemory = new UserRepositoryInMemory(databaseInMemory);
 
     updateUserUseCase = new UpdateUserUseCase(
+      cacheProvider,
       hashProvider,
       genderRepositoryInMemory,
       phoneRepositoryInMemory,
@@ -50,7 +60,7 @@ describe("Update User", () => {
     );
   });
 
-  it("should be able to update user", async () => {
+  it("should be able to update user and delete cache", async () => {
     const gender = await genderRepositoryInMemory.create({
       gender_name: "Gender Test",
     });
@@ -142,7 +152,67 @@ describe("Update User", () => {
       user_updated_at: expect.any(Date),
     };
 
+    const cacheGetUserKey = `${cachePrefixes.getUser}:${userResponse.user_id}`;
+
+    const cacheListAllUsersPaginatedKey = `${cachePrefixes.listAllUsersPaginated}:page:1:limit:10`;
+
+    const cacheGetUserPhone = `${cachePrefixes.getUserPhone}:${userResponse.user_id}`;
+
+    const cacheGetUserAddress = `${cachePrefixes.getUserAddress}:${userResponse.user_id}`;
+
+    await cacheProvider.cacheSet({
+      key: cacheGetUserKey,
+      value: JSON.stringify(userResponse),
+      expiresInSeconds: 60 * 60 * 24,
+    });
+
+    await cacheProvider.cacheSet({
+      key: cacheListAllUsersPaginatedKey,
+      value: JSON.stringify([]),
+      expiresInSeconds: 60 * 60 * 24,
+    });
+
+    await cacheProvider.cacheSet({
+      key: cacheGetUserPhone,
+      value: JSON.stringify({}),
+      expiresInSeconds: 60 * 60 * 24,
+    });
+
+    await cacheProvider.cacheSet({
+      key: cacheGetUserAddress,
+      value: JSON.stringify({}),
+      expiresInSeconds: 60 * 60 * 24,
+    });
+
+    const cacheGetUserBefore = await cacheProvider.cacheGet(cacheGetUserKey);
+
+    const cacheListAllUsersPaginatedBefore = await cacheProvider.cacheGet(
+      cacheListAllUsersPaginatedKey,
+    );
+
+    const cacheGetUserPhoneBefore = await cacheProvider.cacheGet(
+      cacheGetUserPhone,
+    );
+
+    const cacheGetUserAddressBefore = await cacheProvider.cacheGet(
+      cacheGetUserAddress,
+    );
+
     const userUpdated = await updateUserUseCase.execute(userUpdate);
+
+    const cacheGetUserAfter = await cacheProvider.cacheGet(cacheGetUserKey);
+
+    const cacheListAllUsersPaginatedAfter = await cacheProvider.cacheGet(
+      cacheListAllUsersPaginatedKey,
+    );
+
+    const cacheGetUserPhoneAfter = await cacheProvider.cacheGet(
+      cacheGetUserPhone,
+    );
+
+    const cacheGetUserAddressAfter = await cacheProvider.cacheGet(
+      cacheGetUserAddress,
+    );
 
     const userAfterUpdate = await userRepositoryInMemory.findByEmail(
       userUpdate.user_email,
@@ -159,6 +229,14 @@ describe("Update User", () => {
 
     expect(userUpdated).toEqual(userUpdatedExpected);
     expect(passwordMatch).toBe(true);
+    expect(cacheGetUserBefore).not.toBeNull();
+    expect(cacheListAllUsersPaginatedBefore).not.toBeNull();
+    expect(cacheGetUserPhoneBefore).not.toBeNull();
+    expect(cacheGetUserAddressBefore).not.toBeNull();
+    expect(cacheGetUserAfter).toBeNull();
+    expect(cacheListAllUsersPaginatedAfter).toBeNull();
+    expect(cacheGetUserPhoneAfter).toBeNull();
+    expect(cacheGetUserAddressAfter).toBeNull();
   });
 
   it("should be able to update user with an admin request without password", async () => {

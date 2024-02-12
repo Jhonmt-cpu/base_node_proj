@@ -1,26 +1,42 @@
 import request from "supertest";
 
-import { StateEntity } from "@modules/account/infra/knex/entities/StateEntity";
+import { cachePrefixes } from "@config/cache";
 
+import { redisRateLimiterClient } from "@utils/redisRateLimiter";
+
+import { StateEntity } from "@modules/account/infra/knex/entities/StateEntity";
 import { CityEntity } from "@modules/account/infra/knex/entities/CityEntity";
 import { NeighborhoodEntity } from "@modules/account/infra/knex/entities/NeighborhoodEntity";
 
 import { dbConnection } from "@shared/infra/database/knex";
 import { app } from "@shared/infra/http/app";
 import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
+import { RedisCacheProvider } from "@shared/container/providers/CacheProvider/implementations/RedisCacheProvider";
+
+let cacheProvider: RedisCacheProvider;
 
 describe("List Neighborhoods By City Controller", () => {
   beforeAll(async () => {
+    cacheProvider = new RedisCacheProvider();
+
     await dbConnection.migrate.latest();
     await dbConnection.seed.run();
   });
 
+  beforeEach(async () => {
+    await cacheProvider.cacheFlushAll();
+  });
+
   afterAll(async () => {
+    redisRateLimiterClient.disconnect();
+
+    await cacheProvider.cacheFlushAll();
+    await cacheProvider.cacheDisconnect();
     await dbConnection.migrate.rollback();
     await dbConnection.destroy();
   });
 
-  it("should be able to list all neighborhoods by city", async () => {
+  it("should be able to list all neighborhoods by city and create cache", async () => {
     const state = await dbConnection<StateEntity>("tb_states")
       .insert({
         state_name: "New State",
@@ -72,12 +88,21 @@ describe("List Neighborhoods By City Controller", () => {
       }),
     );
 
+    const cacheKey = `${cachePrefixes.listNeighborhoodsByCity}:city_id:${city[0].city_id}`;
+
+    const cacheValueBefore = await cacheProvider.cacheGet(cacheKey);
+
     const response = await request(app).get(
       `/account/city/${city[0].city_id}/neighborhood`,
     );
 
+    const cacheValueAfter = await cacheProvider.cacheGet(cacheKey);
+
     expect(response.status).toBe(200);
     expect(response.body).toEqual(allNeighborhoodsWithDateStrings);
+    expect(cacheValueBefore).toBeNull();
+    expect(cacheValueAfter).not.toBeNull();
+    expect(cacheValueAfter).toEqual(JSON.stringify(response.body));
   });
 
   it("should return 204 if neighborhoods are empty", async () => {

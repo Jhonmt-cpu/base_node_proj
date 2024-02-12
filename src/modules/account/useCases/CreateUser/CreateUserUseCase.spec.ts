@@ -1,4 +1,4 @@
-import { DatabaseInMemory } from "@shared/repositories/inMemory/DatabaseInMemory";
+import { cachePrefixes } from "@config/cache";
 
 import { GenderRepositoryInMemory } from "@modules/account/repositories/inMemory/GenderRepositoryInMemory";
 import { NeighborHoodRepositoryInMemory } from "@modules/account/repositories/inMemory/NeighborhoodRepositoryInMemory";
@@ -6,19 +6,22 @@ import { AddressRepositoryInMemory } from "@modules/account/repositories/inMemor
 import { PhoneRepositoryInMemory } from "@modules/account/repositories/inMemory/PhoneRepositoryInMemory";
 import { UserRepositoryInMemory } from "@modules/account/repositories/inMemory/UserRepositoryInMemory";
 
+import { DatabaseInMemory } from "@shared/repositories/inMemory/DatabaseInMemory";
 import { DayjsDateProvider } from "@shared/container/providers/DateProvider/implementations/DayjsDateProvider";
 import { InMemoryHashProvider } from "@shared/container/providers/HashProvider/implementations/InMemoryHashProvider";
-
 import { AppError } from "@shared/errors/AppError";
 import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
+import { InMemoryCacheProvider } from "@shared/container/providers/CacheProvider/implementations/InMemoryCacheProvider";
 
 import { CreateUserUseCase } from "./CreateUserUseCase";
+
+let dateProvider: DayjsDateProvider;
+
+let cacheProvider: InMemoryCacheProvider;
 
 let databaseInMemory: DatabaseInMemory;
 
 let hashProvider: InMemoryHashProvider;
-
-let dateProvider: DayjsDateProvider;
 
 let genderRepository: GenderRepositoryInMemory;
 
@@ -34,9 +37,10 @@ let createUserUseCase: CreateUserUseCase;
 
 describe("Create User", () => {
   beforeEach(() => {
+    dateProvider = new DayjsDateProvider();
+    cacheProvider = new InMemoryCacheProvider(dateProvider);
     databaseInMemory = new DatabaseInMemory();
     hashProvider = new InMemoryHashProvider();
-    dateProvider = new DayjsDateProvider();
     genderRepository = new GenderRepositoryInMemory(databaseInMemory);
     neighborhoodRepository = new NeighborHoodRepositoryInMemory(
       databaseInMemory,
@@ -46,6 +50,7 @@ describe("Create User", () => {
     userRepository = new UserRepositoryInMemory(databaseInMemory);
 
     createUserUseCase = new CreateUserUseCase(
+      cacheProvider,
       hashProvider,
       dateProvider,
       genderRepository,
@@ -56,7 +61,7 @@ describe("Create User", () => {
     );
   });
 
-  it("should be able to create a new user", async () => {
+  it("should be able to create a new user and erase cache", async () => {
     const gender = await genderRepository.create({
       gender_name: "gender_test",
     });
@@ -86,11 +91,23 @@ describe("Create User", () => {
       },
     };
 
+    const cacheKey = cachePrefixes.listAllUsersPaginated;
+
+    await cacheProvider.cacheSet({
+      key: cacheKey,
+      value: JSON.stringify([]),
+      expiresInSeconds: 60 * 60,
+    });
+
+    const cacheValueBefore = await cacheProvider.cacheGet(cacheKey);
+
     const spyPhoneCreate = jest.spyOn(phoneRepository, "create");
 
     const spyAddressCreate = jest.spyOn(addressRepository, "create");
 
     const user = await createUserUseCase.execute(userData);
+
+    const cacheValueAfter = await cacheProvider.cacheGet(cacheKey);
 
     expect(user).toHaveProperty("user_id");
     expect(spyPhoneCreate).toHaveBeenCalledWith({
@@ -106,6 +123,8 @@ describe("Create User", () => {
       address_neighborhood_id: userData.user_address.address_neighborhood_id,
       address_zip_code: userData.user_address.address_zip_code,
     });
+    expect(cacheValueBefore).not.toBeNull();
+    expect(cacheValueAfter).toBeNull();
   });
 
   it("should not create a user with invalid birth date", async () => {

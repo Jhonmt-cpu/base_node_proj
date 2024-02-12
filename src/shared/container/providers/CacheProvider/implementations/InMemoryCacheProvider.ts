@@ -102,6 +102,10 @@ class InMemoryCacheProvider implements ICacheProvider {
       this.cache.delete(key);
     });
   }
+
+  async cacheDisconnect(): Promise<void> {
+    return;
+  }
 }
 
 export { InMemoryCacheProvider };

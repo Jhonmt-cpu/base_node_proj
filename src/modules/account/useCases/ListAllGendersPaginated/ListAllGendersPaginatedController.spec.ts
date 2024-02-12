@@ -1,23 +1,32 @@
 import request from "supertest";
 
 import testConfig from "@config/test";
+import { cachePrefixes } from "@config/cache";
 
-import { dbConnection } from "@shared/infra/database/knex";
-import { app } from "@shared/infra/http/app";
+import { redisRateLimiterClient } from "@utils/redisRateLimiter";
 
 import { GenderEntity } from "@modules/account/infra/knex/entities/GenderEntity";
 
+import { dbConnection } from "@shared/infra/database/knex";
+import { app } from "@shared/infra/http/app";
 import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
+import { RedisCacheProvider } from "@shared/container/providers/CacheProvider/implementations/RedisCacheProvider";
+
+let cacheProvider: RedisCacheProvider;
 
 let token: string;
 
 describe("List All Genders Paginated Controller", () => {
   beforeAll(async () => {
+    cacheProvider = new RedisCacheProvider();
+
     await dbConnection.migrate.latest();
     await dbConnection.seed.run();
   });
 
   beforeEach(async () => {
+    await cacheProvider.cacheFlushAll();
+
     const { user_test_admin } = testConfig;
 
     const loginResponse = await request(app).post("/auth/login").send({
@@ -29,11 +38,15 @@ describe("List All Genders Paginated Controller", () => {
   });
 
   afterAll(async () => {
+    redisRateLimiterClient.disconnect();
+
+    await cacheProvider.cacheFlushAll();
+    await cacheProvider.cacheDisconnect();
     await dbConnection.migrate.rollback();
     await dbConnection.destroy();
   });
 
-  it("should be able to list all genders paginated", async () => {
+  it("should be able to list all genders paginated and create cache", async () => {
     const gendersToInsert = [];
 
     for (let i = 0; i < 15; i++) {
@@ -53,29 +66,53 @@ describe("List All Genders Paginated Controller", () => {
       gender_created_at: gender.gender_created_at.toISOString(),
     }));
 
+    const genders10Params = {
+      page: 1,
+      limit: 10,
+    };
+
+    const genders20Params = {
+      page: 1,
+      limit: 20,
+    };
+
+    const genders7Params = {
+      page: 2,
+      limit: 7,
+    };
+
+    const cacheKey10 = `${cachePrefixes.listAllGendersPaginated}:page:${genders10Params.page}:limit:${genders10Params.limit}`;
+
+    const cacheKey20 = `${cachePrefixes.listAllGendersPaginated}:page:${genders20Params.page}:limit:${genders20Params.limit}`;
+
+    const cacheKey7 = `${cachePrefixes.listAllGendersPaginated}:page:${genders7Params.page}:limit:${genders7Params.limit}`;
+
+    const cacheValueBefore10 = await cacheProvider.cacheGet(cacheKey10);
+
+    const cacheValueBefore20 = await cacheProvider.cacheGet(cacheKey20);
+
+    const cacheValueBefore7 = await cacheProvider.cacheGet(cacheKey7);
+
     const response10 = await request(app)
       .get("/account/gender")
-      .query({
-        page: 1,
-        limit: 10,
-      })
+      .query(genders10Params)
       .set("Authorization", `Bearer ${token}`);
 
     const response20 = await request(app)
       .get("/account/gender")
-      .query({
-        page: 1,
-        limit: 20,
-      })
+      .query(genders20Params)
       .set("Authorization", `Bearer ${token}`);
 
     const response7 = await request(app)
       .get("/account/gender")
-      .query({
-        page: 2,
-        limit: 7,
-      })
+      .query(genders7Params)
       .set("Authorization", `Bearer ${token}`);
+
+    const cacheValueAfter10 = await cacheProvider.cacheGet(cacheKey10);
+
+    const cacheValueAfter20 = await cacheProvider.cacheGet(cacheKey20);
+
+    const cacheValueAfter7 = await cacheProvider.cacheGet(cacheKey7);
 
     expect(response10.status).toBe(200);
     expect(response10.body).toEqual(allGendersWithDateStrings.slice(0, 10));
@@ -83,6 +120,15 @@ describe("List All Genders Paginated Controller", () => {
     expect(response20.body).toEqual(allGendersWithDateStrings.slice(0, 20));
     expect(response7.status).toBe(200);
     expect(response7.body).toEqual(allGendersWithDateStrings.slice(7, 14));
+    expect(cacheValueBefore10).toBeNull();
+    expect(cacheValueBefore20).toBeNull();
+    expect(cacheValueBefore7).toBeNull();
+    expect(cacheValueAfter10).not.toBeNull();
+    expect(cacheValueAfter20).not.toBeNull();
+    expect(cacheValueAfter7).not.toBeNull();
+    expect(cacheValueAfter10).toBe(JSON.stringify(response10.body));
+    expect(cacheValueAfter20).toBe(JSON.stringify(response20.body));
+    expect(cacheValueAfter7).toBe(JSON.stringify(response7.body));
   });
 
   it("should not be able to list all genders paginated with a normal user", async () => {

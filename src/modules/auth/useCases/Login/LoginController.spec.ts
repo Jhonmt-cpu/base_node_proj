@@ -1,8 +1,9 @@
 import request from "supertest";
 
 import testConfig from "@config/test";
+import { cachePrefixes } from "@config/cache";
 
-import auth from "@config/auth";
+import { redisRateLimiterClient } from "@utils/redisRateLimiter";
 
 import { RedisCacheProvider } from "@shared/container/providers/CacheProvider/implementations/RedisCacheProvider";
 import { dbConnection } from "@shared/infra/database/knex";
@@ -20,6 +21,7 @@ describe("Login Controller", () => {
   });
 
   afterAll(async () => {
+    redisRateLimiterClient.disconnect();
     await dbConnection.migrate.rollback();
     await dbConnection.destroy();
   });
@@ -33,7 +35,7 @@ describe("Login Controller", () => {
     });
 
     const refreshTokenCache = await cacheProvider.cacheGet(
-      `${auth.refresh.cachePrefix}:${response.body.refresh_token}`,
+      `${cachePrefixes.refreshToken}:${response.body.refresh_token}`,
     );
 
     expect(response.status).toBe(200);
@@ -78,7 +80,7 @@ describe("Login Controller", () => {
     });
 
     const refreshTokenFirstCache = await cacheProvider.cacheGet(
-      `${auth.refresh.cachePrefix}:${response.body.refresh_token}`,
+      `${cachePrefixes.refreshToken}:${response.body.refresh_token}`,
     );
 
     const response2 = await request(app).post("/auth/login").send({
@@ -87,11 +89,11 @@ describe("Login Controller", () => {
     });
 
     const refreshTokenSecondCache = await cacheProvider.cacheGet(
-      `${auth.refresh.cachePrefix}:${response2.body.refresh_token}`,
+      `${cachePrefixes.refreshToken}:${response2.body.refresh_token}`,
     );
 
     const refreshTokenFirstCacheDeleted = await cacheProvider.cacheGet(
-      `${auth.refresh.cachePrefix}:${response.body.refresh_token}`,
+      `${cachePrefixes.refreshToken}:${response.body.refresh_token}`,
     );
 
     expect(response.status).toBe(200);

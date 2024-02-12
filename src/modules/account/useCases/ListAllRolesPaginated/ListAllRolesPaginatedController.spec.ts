@@ -1,23 +1,32 @@
 import request from "supertest";
 
 import testConfig from "@config/test";
+import { cachePrefixes } from "@config/cache";
+
+import { redisRateLimiterClient } from "@utils/redisRateLimiter";
 
 import { RoleEntity } from "@modules/account/infra/knex/entities/RoleEntity";
 
 import { dbConnection } from "@shared/infra/database/knex";
 import { app } from "@shared/infra/http/app";
-
 import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
+import { RedisCacheProvider } from "@shared/container/providers/CacheProvider/implementations/RedisCacheProvider";
+
+let cacheProvider: RedisCacheProvider;
 
 let token: string;
 
 describe("List All Roles Paginated Controller", () => {
   beforeAll(async () => {
+    cacheProvider = new RedisCacheProvider();
+
     await dbConnection.migrate.latest();
     await dbConnection.seed.run();
   });
 
   beforeEach(async () => {
+    await cacheProvider.cacheFlushAll();
+
     const { user_test_admin } = testConfig;
 
     const loginResponse = await request(app).post("/auth/login").send({
@@ -29,11 +38,15 @@ describe("List All Roles Paginated Controller", () => {
   });
 
   afterAll(async () => {
+    redisRateLimiterClient.disconnect();
+
+    await cacheProvider.cacheFlushAll();
+    await cacheProvider.cacheDisconnect();
     await dbConnection.migrate.rollback();
     await dbConnection.destroy();
   });
 
-  it("should be able to list all roles paginated", async () => {
+  it("should be able to list all roles paginated and create cache", async () => {
     const rolesToInsert = [];
 
     for (let i = 0; i < 15; i++) {
@@ -50,6 +63,33 @@ describe("List All Roles Paginated Controller", () => {
       ...role,
       role_created_at: role.role_created_at.toISOString(),
     }));
+
+    const roles10Params = {
+      page: 1,
+      limit: 10,
+    };
+
+    const roles20Params = {
+      page: 1,
+      limit: 20,
+    };
+
+    const roles7Params = {
+      page: 2,
+      limit: 7,
+    };
+
+    const cacheKey10 = `${cachePrefixes.listAllRolesPaginated}:page:${roles10Params.page}:limit:${roles10Params.limit}`;
+
+    const cacheKey20 = `${cachePrefixes.listAllRolesPaginated}:page:${roles20Params.page}:limit:${roles20Params.limit}`;
+
+    const cacheKey7 = `${cachePrefixes.listAllRolesPaginated}:page:${roles7Params.page}:limit:${roles7Params.limit}`;
+
+    const cacheValueBefore10 = await cacheProvider.cacheGet(cacheKey10);
+
+    const cacheValueBefore20 = await cacheProvider.cacheGet(cacheKey20);
+
+    const cacheValueBefore7 = await cacheProvider.cacheGet(cacheKey7);
 
     const response10 = await request(app)
       .get("/account/role")
@@ -75,12 +115,27 @@ describe("List All Roles Paginated Controller", () => {
       })
       .set("Authorization", `Bearer ${token}`);
 
+    const cacheValueAfter10 = await cacheProvider.cacheGet(cacheKey10);
+
+    const cacheValueAfter20 = await cacheProvider.cacheGet(cacheKey20);
+
+    const cacheValueAfter7 = await cacheProvider.cacheGet(cacheKey7);
+
     expect(response10.status).toBe(200);
     expect(response10.body).toEqual(allRolesWithDateStrings.slice(0, 10));
     expect(response20.status).toBe(200);
     expect(response20.body).toEqual(allRolesWithDateStrings.slice(0, 20));
     expect(response7.status).toBe(200);
     expect(response7.body).toEqual(allRolesWithDateStrings.slice(7, 14));
+    expect(cacheValueBefore10).toBeNull();
+    expect(cacheValueBefore20).toBeNull();
+    expect(cacheValueBefore7).toBeNull();
+    expect(cacheValueAfter10).not.toBeNull();
+    expect(cacheValueAfter20).not.toBeNull();
+    expect(cacheValueAfter7).not.toBeNull();
+    expect(cacheValueAfter10).toEqual(JSON.stringify(response10.body));
+    expect(cacheValueAfter20).toEqual(JSON.stringify(response20.body));
+    expect(cacheValueAfter7).toEqual(JSON.stringify(response7.body));
   });
 
   it("should not be able to list all roles paginated with a normal user", async () => {

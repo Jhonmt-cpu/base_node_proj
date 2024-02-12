@@ -7,6 +7,7 @@ import { IDateProvider } from "@shared/container/providers/DateProvider/IDatePro
 import { IRefreshTokenRepository } from "@modules/auth/repositories/IRefreshTokenRepository";
 
 import auth from "@config/auth";
+import { cachePrefixes } from "@config/cache";
 
 import { AppError } from "@shared/errors/AppError";
 import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
@@ -26,7 +27,7 @@ class RefreshTokenUseCase {
 
   async execute({ refresh_token }: IRefreshTokenDTO) {
     const tokenCache = await this.cacheProvider.cacheGet(
-      `${auth.refresh.cachePrefix}:${refresh_token}`,
+      `${cachePrefixes.refreshToken}:${refresh_token}`,
     );
 
     if (!tokenCache) {
@@ -36,7 +37,7 @@ class RefreshTokenUseCase {
     const { user_id, user_name, user_role } = JSON.parse(tokenCache);
 
     await this.cacheProvider.cacheDel(
-      `${auth.refresh.cachePrefix}:${refresh_token}`,
+      `${cachePrefixes.refreshToken}:${refresh_token}`,
     );
 
     const rowsDeleted = await this.refreshTokenRepository.deleteById(
@@ -55,7 +56,7 @@ class RefreshTokenUseCase {
     });
 
     await this.cacheProvider.cacheSet({
-      key: `${auth.refresh.cachePrefix}:${newRefreshToken.refresh_token_id}`,
+      key: `${cachePrefixes.refreshToken}:${newRefreshToken.refresh_token_id}`,
       value: JSON.stringify({
         user_id,
         user_name,

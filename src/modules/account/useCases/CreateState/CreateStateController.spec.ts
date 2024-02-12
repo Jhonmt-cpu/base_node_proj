@@ -1,23 +1,32 @@
 import request from "supertest";
 
 import testConfig from "@config/test";
+import { cachePrefixes } from "@config/cache";
+
+import { redisRateLimiterClient } from "@utils/redisRateLimiter";
 
 import { dbConnection } from "@shared/infra/database/knex";
 import { app } from "@shared/infra/http/app";
+import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
 
 import { StateEntity } from "@modules/account/infra/knex/entities/StateEntity";
+import { RedisCacheProvider } from "@shared/container/providers/CacheProvider/implementations/RedisCacheProvider";
 
-import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
+let cacheProvider: RedisCacheProvider;
 
 let token: string;
 
 describe("Create State Controller", () => {
   beforeAll(async () => {
+    cacheProvider = new RedisCacheProvider();
+
     await dbConnection.migrate.latest();
     await dbConnection.seed.run();
   });
 
   beforeEach(async () => {
+    await cacheProvider.cacheFlushAll();
+
     const { user_test_admin } = testConfig;
 
     const loginResponse = await request(app).post("/auth/login").send({
@@ -29,11 +38,25 @@ describe("Create State Controller", () => {
   });
 
   afterAll(async () => {
+    redisRateLimiterClient.disconnect();
+
+    await cacheProvider.cacheFlushAll();
+    await cacheProvider.cacheDisconnect();
     await dbConnection.migrate.rollback();
     await dbConnection.destroy();
   });
 
-  it("should be able to create a new state", async () => {
+  it("should be able to create a new state and erase cache", async () => {
+    const cacheKey = `${cachePrefixes.listAllStates}`;
+
+    await cacheProvider.cacheSet({
+      key: cacheKey,
+      value: JSON.stringify([]),
+      expiresInSeconds: 60 * 60,
+    });
+
+    const cacheValueBefore = await cacheProvider.cacheGet(cacheKey);
+
     const response = await request(app)
       .post("/account/state")
       .send({
@@ -44,8 +67,12 @@ describe("Create State Controller", () => {
         Authorization: `Bearer ${token}`,
       });
 
+    const cacheValueAfter = await cacheProvider.cacheGet(cacheKey);
+
     expect(response.status).toBe(201);
     expect(response.body).toHaveProperty("state_id");
+    expect(cacheValueBefore).not.toBe(null);
+    expect(cacheValueAfter).toBe(null);
   });
 
   it("should not be able to create a state if name already exists", async () => {

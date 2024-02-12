@@ -2,6 +2,10 @@ import request from "supertest";
 import { v4 as uuid } from "uuid";
 
 import testConfig from "@config/test";
+import { cachePrefixes } from "@config/cache";
+import auth from "@config/auth";
+
+import { redisRateLimiterClient } from "@utils/redisRateLimiter";
 
 import { UserEntity } from "@modules/account/infra/knex/entities/UserEntity";
 import { GenderEntity } from "@modules/account/infra/knex/entities/GenderEntity";
@@ -19,8 +23,6 @@ import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
 import { RefreshTokenEntity } from "@modules/auth/infra/knex/entities/RefreshTokenEntity";
 import { DayjsDateProvider } from "@shared/container/providers/DateProvider/implementations/DayjsDateProvider";
 
-import auth from "@config/auth";
-
 let hashProvider: BcryptjsHashProvider;
 
 let dateProvider: DayjsDateProvider;
@@ -31,15 +33,17 @@ let token: string;
 
 describe("Delete User Controller", () => {
   beforeAll(async () => {
-    await dbConnection.migrate.latest();
-    await dbConnection.seed.run();
-
     hashProvider = new BcryptjsHashProvider();
     cacheProvider = new RedisCacheProvider();
     dateProvider = new DayjsDateProvider();
+
+    await dbConnection.migrate.latest();
+    await dbConnection.seed.run();
   });
 
   beforeEach(async () => {
+    await cacheProvider.cacheFlushAll();
+
     const { user_test_admin } = testConfig;
 
     const loginResponse = await request(app).post("/auth/login").send({
@@ -51,11 +55,15 @@ describe("Delete User Controller", () => {
   });
 
   afterAll(async () => {
+    redisRateLimiterClient.disconnect();
+
+    await cacheProvider.cacheFlushAll();
+    await cacheProvider.cacheDisconnect();
     await dbConnection.migrate.rollback();
     await dbConnection.destroy();
   });
 
-  it("should be able to delete a user with an admin request", async () => {
+  it("should be able to delete a user with an admin request and erase cache", async () => {
     const gender = await dbConnection<GenderEntity>("tb_genders")
       .insert({
         gender_name: "New Gender",
@@ -148,7 +156,7 @@ describe("Delete User Controller", () => {
     }
 
     await cacheProvider.cacheSet({
-      key: `${auth.refresh.cachePrefix}:${refreshToken[0].refresh_token_id}`,
+      key: `${cachePrefixes.refreshToken}:${refreshToken[0].refresh_token_id}`,
       value: JSON.stringify({
         user_id: userInsertResponse[0].user_id,
         user_name: user.user_name,
@@ -156,6 +164,68 @@ describe("Delete User Controller", () => {
       }),
       expiresInSeconds: Number(auth.refresh.expiresInDays) * 24 * 60 * 60,
     });
+
+    const cacheGetUserKey = `${cachePrefixes.getUser}:${userInsertResponse[0].user_id}`;
+
+    const cacheGetUserAddressKey = `${cachePrefixes.getUserAddress}:${userInsertResponse[0].user_id}`;
+
+    const cacheGetUserPhoneKey = `${cachePrefixes.getUserPhone}:${userInsertResponse[0].user_id}`;
+
+    const cacheGetUserCompleteKey = `${cachePrefixes.getUserComplete}:${userInsertResponse[0].user_id}`;
+
+    const cacheListAllUsersPaginatedKey = `${cachePrefixes.listAllUsersPaginated}`;
+
+    await cacheProvider.cacheSet({
+      key: cacheGetUserKey,
+      value: JSON.stringify(userInsertResponse[0]),
+      expiresInSeconds: 60 * 60,
+    });
+
+    await cacheProvider.cacheSet({
+      key: cacheGetUserAddressKey,
+      value: JSON.stringify({}),
+      expiresInSeconds: 60 * 60,
+    });
+
+    await cacheProvider.cacheSet({
+      key: cacheGetUserPhoneKey,
+      value: JSON.stringify({}),
+      expiresInSeconds: 60 * 60,
+    });
+
+    await cacheProvider.cacheSet({
+      key: cacheGetUserCompleteKey,
+      value: JSON.stringify({
+        user: userInsertResponse[0],
+        address: {},
+        phone: {},
+      }),
+      expiresInSeconds: 60 * 60,
+    });
+
+    await cacheProvider.cacheSet({
+      key: cacheListAllUsersPaginatedKey,
+      value: JSON.stringify([]),
+      expiresInSeconds: 60 * 60,
+    });
+
+    const cacheGetUserBefore = await cacheProvider.cacheGet(cacheGetUserKey);
+
+    const cacheGetUserAddressBefore = await cacheProvider.cacheGet(
+      cacheGetUserAddressKey,
+    );
+
+    const cacheGetUserPhoneBefore = await cacheProvider.cacheGet(
+      cacheGetUserPhoneKey,
+    );
+
+    const cacheGetUserCompleteBefore = await cacheProvider.cacheGet(
+      cacheGetUserCompleteKey,
+    );
+
+    const cacheListAllUsersPaginatedBefore = await cacheProvider.cacheGet(
+      cacheListAllUsersPaginatedKey,
+    );
 
     const response = await request(app)
       .delete(`/account/user/${userInsertResponse[0].user_id}`)
@@ -179,7 +249,7 @@ describe("Delete User Controller", () => {
       });
 
     const refreshTokenCacheDeleted = await cacheProvider.cacheGet(
-      `${auth.refresh.cachePrefix}:${refreshToken[0].refresh_token_id}`,
+      `${cachePrefixes.refreshToken}:${refreshToken[0].refresh_token_id}`,
     );
 
     const userPhoneDeleted = await dbConnection<PhoneEntity>("tb_phones")
@@ -196,12 +266,36 @@ describe("Delete User Controller", () => {
       })
       .first();
 
+    const cacheGetUserAfter = await cacheProvider.cacheGet(cacheGetUserKey);
+    const cacheGetUserAddressAfter = await cacheProvider.cacheGet(
+      cacheGetUserAddressKey,
+    );
+    const cacheGetUserPhoneAfter = await cacheProvider.cacheGet(
+      cacheGetUserPhoneKey,
+    );
+    const cacheGetUserCompleteAfter = await cacheProvider.cacheGet(
+      cacheGetUserCompleteKey,
+    );
+    const cacheListAllUsersPaginatedAfter = await cacheProvider.cacheGet(
+      cacheListAllUsersPaginatedKey,
+    );
+
     expect(response.status).toBe(204);
     expect(userDeleted).toBeUndefined();
     expect(refreshTokensDeleted).toHaveLength(0);
     expect(refreshTokenCacheDeleted).toBeNull();
     expect(userPhoneDeleted).toBeUndefined();
     expect(userAddressDeleted).toBeUndefined();
+    expect(cacheGetUserBefore).not.toBeNull();
+    expect(cacheGetUserAfter).toBeNull();
+    expect(cacheGetUserAddressBefore).not.toBeNull();
+    expect(cacheGetUserAddressAfter).toBeNull();
+    expect(cacheGetUserPhoneBefore).not.toBeNull();
+    expect(cacheGetUserPhoneAfter).toBeNull();
+    expect(cacheGetUserCompleteBefore).not.toBeNull();
+    expect(cacheGetUserCompleteAfter).toBeNull();
+    expect(cacheListAllUsersPaginatedBefore).not.toBeNull();
+    expect(cacheListAllUsersPaginatedAfter).toBeNull();
   });
 
   it("should not be able to delete a user if it does not exists", async () => {

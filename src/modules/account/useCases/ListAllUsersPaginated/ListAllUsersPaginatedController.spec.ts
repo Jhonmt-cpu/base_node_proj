@@ -1,24 +1,33 @@
 import request from "supertest";
 
 import testConfig from "@config/test";
+import { cachePrefixes } from "@config/cache";
 
-import { dbConnection } from "@shared/infra/database/knex";
-import { app } from "@shared/infra/http/app";
+import { redisRateLimiterClient } from "@utils/redisRateLimiter";
 
 import { GenderEntity } from "@modules/account/infra/knex/entities/GenderEntity";
 import { UserEntity } from "@modules/account/infra/knex/entities/UserEntity";
 
+import { dbConnection } from "@shared/infra/database/knex";
+import { app } from "@shared/infra/http/app";
 import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
+import { RedisCacheProvider } from "@shared/container/providers/CacheProvider/implementations/RedisCacheProvider";
+
+let cacheProvider: RedisCacheProvider;
 
 let token: string;
 
 describe("List All Users Paginated Controller", () => {
   beforeAll(async () => {
+    cacheProvider = new RedisCacheProvider();
+
     await dbConnection.migrate.latest();
     await dbConnection.seed.run();
   });
 
   beforeEach(async () => {
+    await cacheProvider.cacheFlushAll();
+
     const { user_test_admin } = testConfig;
 
     const loginResponse = await request(app).post("/auth/login").send({
@@ -30,11 +39,15 @@ describe("List All Users Paginated Controller", () => {
   });
 
   afterAll(async () => {
+    redisRateLimiterClient.disconnect();
+
+    await cacheProvider.cacheFlushAll();
+    await cacheProvider.cacheDisconnect();
     await dbConnection.migrate.rollback();
     await dbConnection.destroy();
   });
 
-  it("should be able to list all users paginated", async () => {
+  it("should be able to list all users paginated and create cache", async () => {
     const gender = await dbConnection<GenderEntity>("tb_genders")
       .insert({
         gender_name: "New Gender",
@@ -79,29 +92,53 @@ describe("List All Users Paginated Controller", () => {
       user_birth_date: user.user_birth_date.toISOString(),
     }));
 
+    const users10Params = {
+      page: 1,
+      limit: 10,
+    };
+
+    const users20Params = {
+      page: 1,
+      limit: 20,
+    };
+
+    const users7Params = {
+      page: 2,
+      limit: 7,
+    };
+
+    const cache10Key = `${cachePrefixes.listAllUsersPaginated}:page:${users10Params.page}:limit:${users10Params.limit}`;
+
+    const cache20Key = `${cachePrefixes.listAllUsersPaginated}:page:${users20Params.page}:limit:${users20Params.limit}`;
+
+    const cache7Key = `${cachePrefixes.listAllUsersPaginated}:page:${users7Params.page}:limit:${users7Params.limit}`;
+
+    const cache10Before = await cacheProvider.cacheGet(cache10Key);
+
+    const cache20Before = await cacheProvider.cacheGet(cache20Key);
+
+    const cache7Before = await cacheProvider.cacheGet(cache7Key);
+
     const response10 = await request(app)
       .get("/account/user")
-      .query({
-        page: 1,
-        limit: 10,
-      })
+      .query(users10Params)
       .set("Authorization", `Bearer ${token}`);
 
     const response20 = await request(app)
       .get("/account/user")
-      .query({
-        page: 1,
-        limit: 20,
-      })
+      .query(users20Params)
       .set("Authorization", `Bearer ${token}`);
 
     const response7 = await request(app)
       .get("/account/user")
-      .query({
-        page: 2,
-        limit: 7,
-      })
+      .query(users7Params)
       .set("Authorization", `Bearer ${token}`);
+
+    const cache10After = await cacheProvider.cacheGet(cache10Key);
+
+    const cache20After = await cacheProvider.cacheGet(cache20Key);
+
+    const cache7After = await cacheProvider.cacheGet(cache7Key);
 
     expect(response10.status).toBe(200);
     expect(response10.body).toEqual(allUsersWithDateStrings.slice(0, 10));
@@ -109,6 +146,12 @@ describe("List All Users Paginated Controller", () => {
     expect(response20.body).toEqual(allUsersWithDateStrings.slice(0, 20));
     expect(response7.status).toBe(200);
     expect(response7.body).toEqual(allUsersWithDateStrings.slice(7, 14));
+    expect(cache10Before).toBeNull();
+    expect(cache20Before).toBeNull();
+    expect(cache7Before).toBeNull();
+    expect(cache10After).toBe(JSON.stringify(response10.body));
+    expect(cache20After).toBe(JSON.stringify(response20.body));
+    expect(cache7After).toBe(JSON.stringify(response7.body));
   });
 
   it("should not be able to list all users paginated with a normal user", async () => {

@@ -1,6 +1,9 @@
 import request from "supertest";
 
 import testConfig from "@config/test";
+import { cachePrefixes } from "@config/cache";
+
+import { redisRateLimiterClient } from "@utils/redisRateLimiter";
 
 import { UserEntity } from "@modules/account/infra/knex/entities/UserEntity";
 import { GenderEntity } from "@modules/account/infra/knex/entities/GenderEntity";
@@ -14,23 +17,35 @@ import { BcryptjsHashProvider } from "@shared/container/providers/HashProvider/i
 import { dbConnection } from "@shared/infra/database/knex";
 import { app } from "@shared/infra/http/app";
 import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
+import { RedisCacheProvider } from "@shared/container/providers/CacheProvider/implementations/RedisCacheProvider";
 
 let hashProvider: BcryptjsHashProvider;
 
+let cacheProvider: RedisCacheProvider;
+
 describe("Update User Me Controller", () => {
   beforeAll(async () => {
+    cacheProvider = new RedisCacheProvider();
+    hashProvider = new BcryptjsHashProvider();
+
     await dbConnection.migrate.latest();
     await dbConnection.seed.run();
+  });
 
-    hashProvider = new BcryptjsHashProvider();
+  beforeEach(async () => {
+    await cacheProvider.cacheFlushAll();
   });
 
   afterAll(async () => {
+    redisRateLimiterClient.disconnect();
+
+    await cacheProvider.cacheFlushAll();
+    await cacheProvider.cacheDisconnect();
     await dbConnection.migrate.rollback();
     await dbConnection.destroy();
   });
 
-  it("should be able to update a me user with", async () => {
+  it("should be able to update a me user with authentication and create cache", async () => {
     const gender = await dbConnection<GenderEntity>("tb_genders")
       .insert({
         gender_name: "New Gender",
@@ -137,6 +152,52 @@ describe("Update User Me Controller", () => {
       throw new Error("Phone not created");
     }
 
+    const cacheGetUserKey = `${cachePrefixes.getUser}:${userInsertResponse[0].user_id}`;
+
+    const cacheListAllUsersPaginatedKey = `${cachePrefixes.listAllUsersPaginated}:page:1:limit:10`;
+
+    const cacheGetUserPhone = `${cachePrefixes.getUserPhone}:${userInsertResponse[0].user_id}`;
+
+    const cacheGetUserAddress = `${cachePrefixes.getUserAddress}:${userInsertResponse[0].user_id}`;
+
+    await cacheProvider.cacheSet({
+      key: cacheGetUserKey,
+      value: JSON.stringify(userInsertResponse[0]),
+      expiresInSeconds: 60 * 60 * 24,
+    });
+
+    await cacheProvider.cacheSet({
+      key: cacheListAllUsersPaginatedKey,
+      value: JSON.stringify([]),
+      expiresInSeconds: 60 * 60 * 24,
+    });
+
+    await cacheProvider.cacheSet({
+      key: cacheGetUserPhone,
+      value: JSON.stringify({}),
+      expiresInSeconds: 60 * 60 * 24,
+    });
+
+    await cacheProvider.cacheSet({
+      key: cacheGetUserAddress,
+      value: JSON.stringify({}),
+      expiresInSeconds: 60 * 60 * 24,
+    });
+
+    const cacheGetUserBefore = await cacheProvider.cacheGet(cacheGetUserKey);
+
+    const cacheListAllUsersPaginatedBefore = await cacheProvider.cacheGet(
+      cacheListAllUsersPaginatedKey,
+    );
+
+    const cacheGetUserPhoneBefore = await cacheProvider.cacheGet(
+      cacheGetUserPhone,
+    );
+
+    const cacheGetUserAddressBefore = await cacheProvider.cacheGet(
+      cacheGetUserAddress,
+    );
+
     const userUpdate = {
       user_name: "User Test Update",
       user_email: "usertesteupdate@email.com",
@@ -208,6 +269,20 @@ describe("Update User Me Controller", () => {
       throw new Error("Phone not found");
     }
 
+    const cacheGetUserAfter = await cacheProvider.cacheGet(cacheGetUserKey);
+
+    const cacheListAllUsersPaginatedAfter = await cacheProvider.cacheGet(
+      cacheListAllUsersPaginatedKey,
+    );
+
+    const cacheGetUserPhoneAfter = await cacheProvider.cacheGet(
+      cacheGetUserPhone,
+    );
+
+    const cacheGetUserAddressAfter = await cacheProvider.cacheGet(
+      cacheGetUserAddress,
+    );
+
     const phoneWithDateStrings = Object.assign(phoneAfterUpdate, {
       phone_updated_at: phoneAfterUpdate.phone_updated_at.toISOString(),
     });
@@ -235,6 +310,14 @@ describe("Update User Me Controller", () => {
     expect(response.status).toBe(200);
     expect(passwordMatch).toBe(true);
     expect(response.body).toEqual(userUpdateExpected);
+    expect(cacheGetUserBefore).not.toBeNull();
+    expect(cacheListAllUsersPaginatedBefore).not.toBeNull();
+    expect(cacheGetUserPhoneBefore).not.toBeNull();
+    expect(cacheGetUserAddressBefore).not.toBeNull();
+    expect(cacheGetUserAfter).toBeNull();
+    expect(cacheListAllUsersPaginatedAfter).toBeNull();
+    expect(cacheGetUserPhoneAfter).toBeNull();
+    expect(cacheGetUserAddressAfter).toBeNull();
   });
 
   it("should not be able to update an user with incorrect password", async () => {

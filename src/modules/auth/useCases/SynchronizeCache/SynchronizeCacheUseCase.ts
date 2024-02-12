@@ -1,11 +1,11 @@
 import { inject, injectable } from "tsyringe";
 
+import { cachePrefixes } from "@config/cache";
+
 import { IRefreshTokenRepository } from "@modules/auth/repositories/IRefreshTokenRepository";
 
 import { ICacheProvider } from "@shared/container/providers/CacheProvider/ICacheProvider";
 import { IDateProvider } from "@shared/container/providers/DateProvider/IDateProvider";
-
-import auth from "@config/auth";
 
 @injectable()
 class SynchronizeCacheUseCase {
@@ -26,7 +26,7 @@ class SynchronizeCacheUseCase {
 
     const refreshTokensToCache = refreshTokens.map((refreshToken) => {
       return {
-        key: `${auth.refresh.cachePrefix}:${refreshToken.refresh_token_id}`,
+        key: `${cachePrefixes.refreshToken}:${refreshToken.refresh_token_id}`,
         value: JSON.stringify({
           user_id: refreshToken.user_id,
           user_name: refreshToken.user_name,

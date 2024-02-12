@@ -1,12 +1,19 @@
-import { DatabaseInMemory } from "@shared/repositories/inMemory/DatabaseInMemory";
+import { cachePrefixes } from "@config/cache";
 
 import { CityRepositoryInMemory } from "@modules/account/repositories/inMemory/CityRepositoryInMemory";
 import { StateRepositoryInMemory } from "@modules/account/repositories/inMemory/StateRepositoryInMemory";
 
+import { DatabaseInMemory } from "@shared/repositories/inMemory/DatabaseInMemory";
 import { AppError } from "@shared/errors/AppError";
+import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
+import { DayjsDateProvider } from "@shared/container/providers/DateProvider/implementations/DayjsDateProvider";
+import { InMemoryCacheProvider } from "@shared/container/providers/CacheProvider/implementations/InMemoryCacheProvider";
 
 import { ListCitiesByStateUseCase } from "./ListCitiesByStateUseCase";
-import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
+
+let dateProvider: DayjsDateProvider;
+
+let cacheProvider: InMemoryCacheProvider;
 
 let databaseInMemory: DatabaseInMemory;
 
@@ -18,17 +25,20 @@ let listCitiesByStateUseCase: ListCitiesByStateUseCase;
 
 describe("List Cities By State", () => {
   beforeEach(() => {
+    dateProvider = new DayjsDateProvider();
+    cacheProvider = new InMemoryCacheProvider(dateProvider);
     databaseInMemory = new DatabaseInMemory();
     stateRepositoryInMemory = new StateRepositoryInMemory(databaseInMemory);
     cityRepositoryInMemory = new CityRepositoryInMemory(databaseInMemory);
 
     listCitiesByStateUseCase = new ListCitiesByStateUseCase(
+      cacheProvider,
       stateRepositoryInMemory,
       cityRepositoryInMemory,
     );
   });
 
-  it("should be able to list all cities by state", async () => {
+  it("should be able to list all cities by state and create cache", async () => {
     const state = await stateRepositoryInMemory.create({
       state_name: "state_test",
       state_uf: "ST",
@@ -54,11 +64,19 @@ describe("List Cities By State", () => {
       city_state_id: state2.state_id,
     });
 
+    const cacheKey = `${cachePrefixes.listCitiesByState}:state_id:${state.state_id}`;
+
+    const cacheValueBefore = await cacheProvider.cacheGet(cacheKey);
+
     const cities = await listCitiesByStateUseCase.execute({
       state_id: state.state_id,
     });
 
+    const cacheValue = await cacheProvider.cacheGet(cacheKey);
+
     expect(cities).toEqual([city1, city2]);
+    expect(cacheValueBefore).toBeNull();
+    expect(cacheValue).not.toBeNull();
   });
 
   it("should not be able to list all cities by state if state not exists", async () => {
