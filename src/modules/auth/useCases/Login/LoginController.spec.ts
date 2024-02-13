@@ -1,23 +1,18 @@
 import request from "supertest";
 
 import testConfig from "@config/test";
-import { cachePrefixes } from "@config/cache";
 
 import { redisRateLimiterClient } from "@utils/redisRateLimiter";
 
-import { RedisCacheProvider } from "@shared/container/providers/CacheProvider/implementations/RedisCacheProvider";
 import { dbConnection } from "@shared/infra/database/knex";
 import { app } from "@shared/infra/http/app";
 import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
-
-let cacheProvider: RedisCacheProvider;
+import { RefreshTokenEntity } from "@modules/auth/infra/knex/entities/RefreshTokenEntity";
 
 describe("Login Controller", () => {
   beforeAll(async () => {
     await dbConnection.migrate.latest();
     await dbConnection.seed.run();
-
-    cacheProvider = new RedisCacheProvider();
   });
 
   afterAll(async () => {
@@ -34,15 +29,10 @@ describe("Login Controller", () => {
       user_password,
     });
 
-    const refreshTokenCache = await cacheProvider.cacheGet(
-      `${cachePrefixes.refreshToken}:${response.body.refresh_token}`,
-    );
-
     expect(response.status).toBe(200);
     expect(response.body).toHaveProperty("token");
     expect(response.body).toHaveProperty("refresh_token");
     expect(response.body).toHaveProperty("user");
-    expect(refreshTokenCache).not.toBeNull();
   });
 
   it("should not be able to authenticate a user with wrong email", async () => {
@@ -71,7 +61,7 @@ describe("Login Controller", () => {
     );
   });
 
-  it("should clean refresh token cache when user authenticate", async () => {
+  it("should clean refresh token from database when user authenticate", async () => {
     const { user_email, user_password } = testConfig.user_test;
 
     const response = await request(app).post("/auth/login").send({
@@ -79,34 +69,50 @@ describe("Login Controller", () => {
       user_password,
     });
 
-    const refreshTokenFirstCache = await cacheProvider.cacheGet(
-      `${cachePrefixes.refreshToken}:${response.body.refresh_token}`,
-    );
+    const firstRefreshToken = await dbConnection<RefreshTokenEntity>(
+      "tb_refresh_tokens",
+    )
+      .select("*")
+      .where({
+        refresh_token_id: response.body.refresh_token,
+      })
+      .first();
 
     const response2 = await request(app).post("/auth/login").send({
       user_email,
       user_password,
     });
 
-    const refreshTokenSecondCache = await cacheProvider.cacheGet(
-      `${cachePrefixes.refreshToken}:${response2.body.refresh_token}`,
-    );
+    const refreshTokenDeleted = await dbConnection<RefreshTokenEntity>(
+      "tb_refresh_tokens",
+    )
+      .select("*")
+      .where({
+        refresh_token_id: response.body.refresh_token,
+      })
+      .first();
 
-    const refreshTokenFirstCacheDeleted = await cacheProvider.cacheGet(
-      `${cachePrefixes.refreshToken}:${response.body.refresh_token}`,
-    );
+    const secondRefreshToken = await dbConnection<RefreshTokenEntity>(
+      "tb_refresh_tokens",
+    )
+      .select("*")
+      .where({
+        refresh_token_id: response2.body.refresh_token,
+      })
+      .first();
 
     expect(response.status).toBe(200);
     expect(response.body).toHaveProperty("token");
     expect(response.body).toHaveProperty("refresh_token");
     expect(response.body).toHaveProperty("user");
-    expect(refreshTokenFirstCache).not.toBeNull();
 
     expect(response2.status).toBe(200);
     expect(response2.body).toHaveProperty("token");
     expect(response2.body).toHaveProperty("refresh_token");
     expect(response2.body).toHaveProperty("user");
-    expect(refreshTokenSecondCache).not.toBeNull();
-    expect(refreshTokenFirstCacheDeleted).toBeNull();
+
+    expect(firstRefreshToken).toBeTruthy();
+    expect(refreshTokenDeleted).toBeFalsy();
+    expect(secondRefreshToken).toBeTruthy();
   });
 });

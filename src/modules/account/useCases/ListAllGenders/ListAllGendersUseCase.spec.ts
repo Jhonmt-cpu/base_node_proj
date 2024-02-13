@@ -48,4 +48,26 @@ describe("List All Genders", () => {
     expect(cacheValueBefore).toBeNull();
     expect(cacheValueAfter).not.toBeNull();
   });
+
+  it("should be able to list all genders from cache", async () => {
+    await genderRepositoryInMemory.create({
+      gender_name: "gender_test 2",
+    });
+
+    const firstResponse = await listAllGendersUseCase.execute();
+
+    const cacheKey = cachePrefixes.listAllGenders;
+
+    const spyCache = jest.spyOn(cacheProvider, "cacheGet");
+
+    const secondResponse = await listAllGendersUseCase.execute();
+
+    const valueCacheReturned = await spyCache.mock.results[0].value;
+
+    expect(JSON.stringify(firstResponse)).toEqual(
+      JSON.stringify(secondResponse),
+    );
+    expect(spyCache).toHaveBeenCalledWith(cacheKey);
+    expect(valueCacheReturned).toEqual(JSON.stringify(firstResponse));
+  });
 });

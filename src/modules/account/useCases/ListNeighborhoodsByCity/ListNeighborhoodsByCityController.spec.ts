@@ -105,11 +105,11 @@ describe("List Neighborhoods By City Controller", () => {
     expect(cacheValueAfter).toEqual(JSON.stringify(response.body));
   });
 
-  it("should return 204 if neighborhoods are empty", async () => {
+  it("should be able to list all neighborhoods by city from cache", async () => {
     const state = await dbConnection<StateEntity>("tb_states")
       .insert({
         state_name: "New State 2",
-        state_uf: "N2",
+        state_uf: "NS",
       })
       .returning("*");
 
@@ -120,6 +120,63 @@ describe("List Neighborhoods By City Controller", () => {
     const city = await dbConnection<CityEntity>("tb_cities")
       .insert({
         city_name: "New City 2",
+        city_state_id: state[0].state_id,
+      })
+      .returning("*");
+
+    if (!city[0]) {
+      throw new Error("City not created");
+    }
+
+    const neighborhoodsToInsert = [];
+
+    for (let i = 0; i < 10; i++) {
+      neighborhoodsToInsert.push({
+        neighborhood_name: `Neighborhood ${i + 10}`,
+        neighborhood_city_id: city[0].city_id,
+      });
+    }
+
+    await dbConnection<NeighborhoodEntity>("tb_neighborhoods").insert(
+      neighborhoodsToInsert,
+    );
+
+    const firstGetResponse = await request(app).get(
+      `/account/city/${city[0].city_id}/neighborhood`,
+    );
+
+    const spyOnCache = jest.spyOn(RedisCacheProvider.prototype, "cacheGet");
+
+    const cacheKey = `${cachePrefixes.listNeighborhoodsByCity}:city_id:${city[0].city_id}`;
+
+    const secondGetResponse = await request(app).get(
+      `/account/city/${city[0].city_id}/neighborhood`,
+    );
+
+    const valueCacheReturned = await spyOnCache.mock.results[0].value;
+
+    expect(firstGetResponse.status).toBe(200);
+    expect(secondGetResponse.status).toBe(200);
+    expect(firstGetResponse.body).toEqual(secondGetResponse.body);
+    expect(spyOnCache).toHaveBeenCalledWith(cacheKey);
+    expect(JSON.stringify(firstGetResponse.body)).toEqual(valueCacheReturned);
+  });
+
+  it("should return 204 if neighborhoods are empty", async () => {
+    const state = await dbConnection<StateEntity>("tb_states")
+      .insert({
+        state_name: "New State 3",
+        state_uf: "N2",
+      })
+      .returning("*");
+
+    if (!state[0]) {
+      throw new Error("State not created");
+    }
+
+    const city = await dbConnection<CityEntity>("tb_cities")
+      .insert({
+        city_name: "New City 3",
         city_state_id: state[0].state_id,
       })
       .returning("*");

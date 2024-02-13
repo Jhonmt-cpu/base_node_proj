@@ -111,6 +111,33 @@ class UserRepositoryInMemory implements IUserRepository {
     return userWithRole;
   }
 
+  async findByIdWithRole(
+    user_id: number,
+  ): Promise<IFlatUserWithRoleResponseRepositoryDTO | undefined> {
+    const user = this.databaseInMemory.users.find(
+      (user) => user.user_id === user_id,
+    );
+
+    if (!user) {
+      return undefined;
+    }
+
+    const role = this.databaseInMemory.roles.find(
+      (role) => role.role_id === user.user_role_id,
+    );
+
+    if (!role) {
+      throw new Error("Role not found");
+    }
+
+    const userWithRole = {
+      ...user,
+      ...role,
+    };
+
+    return userWithRole;
+  }
+
   async findByIdWithoutPassword(
     user_id: number,
   ): Promise<IUserWithoutPasswordRepositoryDTO | undefined> {

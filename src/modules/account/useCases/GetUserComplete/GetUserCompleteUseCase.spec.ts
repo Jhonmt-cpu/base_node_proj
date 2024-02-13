@@ -64,7 +64,7 @@ describe("Get User Complete", () => {
     );
   });
 
-  it("should be able to get a user complete", async () => {
+  it("should be able to get a user complete and create cache", async () => {
     const role = await roleRepository.create({
       role_name: "role_test",
     });
@@ -147,6 +147,74 @@ describe("Get User Complete", () => {
     expect(cacheValueBefore).toBeNull();
     expect(cacheValueAfter).not.toBeNull();
     expect(cacheValueAfter).toBe(JSON.stringify(userWithoutPassword));
+  });
+
+  it("should be able to get a user complete from cache", async () => {
+    await roleRepository.create({
+      role_name: "role_test",
+    });
+
+    const gender = await genderRepository.create({
+      gender_name: "gender_test 2",
+    });
+
+    const state = await stateRepository.create({
+      state_name: "state_test 2",
+      state_uf: "ST",
+    });
+
+    const city = await cityRepository.create({
+      city_name: "city_test 2",
+      city_state_id: state.state_id,
+    });
+
+    const neighborhood = await neighborhoodRepository.create({
+      neighborhood_name: "neighborhood_test 2",
+      neighborhood_city_id: city.city_id,
+    });
+
+    const user = {
+      user_name: "user_test 2",
+      user_email: "usertest2@test.com",
+      user_cpf: 12345678911,
+      user_gender_id: gender.gender_id,
+      user_password: "123456",
+      user_birth_date: new Date("2005-01-01"),
+    };
+
+    const userResponse = await userRepository.create(user);
+
+    await addressRepository.create({
+      user_address_id: userResponse.user_id,
+      address_zip_code: 12345678,
+      address_street: "address_street_test 2",
+      address_number: 123,
+      address_neighborhood_id: neighborhood.neighborhood_id,
+    });
+
+    await phoneRepository.create({
+      user_phone_id: userResponse.user_id,
+      phone_ddd: 34,
+      phone_number: 123456788,
+    });
+
+    const firstResponse = await getUserCompleteUseCase.execute({
+      user_id: userResponse.user_id,
+    });
+
+    const spyCache = jest.spyOn(cacheProvider, "cacheGet");
+
+    const cacheKey = `${cachePrefixes.getUserComplete}:${userResponse.user_id}`;
+
+    const secondResponse = await getUserCompleteUseCase.execute({
+      user_id: userResponse.user_id,
+    });
+
+    const returnedCacheFromSpy = await spyCache.mock.results[0].value;
+
+    expect(JSON.stringify(firstResponse)).toBe(JSON.stringify(secondResponse));
+    expect(spyCache).toHaveBeenCalledWith(cacheKey);
+    expect(returnedCacheFromSpy).toBe(JSON.stringify(firstResponse));
   });
 
   it("should not be able to get a user complete with non-existent user", async () => {

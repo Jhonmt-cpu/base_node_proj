@@ -63,6 +63,28 @@ describe("List All Genders Controller", () => {
     expect(cacheValueAfter).toEqual(JSON.stringify(response.body));
   });
 
+  it("should be able to list all genders from cache", async () => {
+    await dbConnection<GenderEntity>("tb_genders").insert({
+      gender_name: "New Gender 2",
+    });
+
+    const firstGetResponse = await request(app).get("/account/gender/all");
+
+    const cacheKey = cachePrefixes.listAllGenders;
+
+    const cacheSpy = jest.spyOn(RedisCacheProvider.prototype, "cacheGet");
+
+    const secondGetResponse = await request(app).get("/account/gender/all");
+
+    const cacheValueReturned = await cacheSpy.mock.results[0].value;
+
+    expect(firstGetResponse.status).toBe(200);
+    expect(secondGetResponse.status).toBe(200);
+    expect(secondGetResponse.body).toEqual(firstGetResponse.body);
+    expect(cacheSpy).toHaveBeenCalledWith(cacheKey);
+    expect(cacheValueReturned).toBe(JSON.stringify(firstGetResponse.body));
+  });
+
   it("should return 204 if genders are empty", async () => {
     await dbConnection<UserEntity>("tb_users").del();
 

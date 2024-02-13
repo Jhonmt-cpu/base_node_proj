@@ -88,4 +88,80 @@ describe("List All Roles Paginated", () => {
     expect(cacheValueAfter5).not.toBeNull();
     expect(cacheValueAfter30).not.toBeNull();
   });
+
+  it("should be able to list all roles paginated and use cache", async () => {
+    const rolesToInsert = [];
+
+    for (let i = 0; i < 15; i++) {
+      rolesToInsert.push({
+        role_name: `Role ${i + 15}`,
+      });
+    }
+
+    for (const role of rolesToInsert) {
+      await roleRepositoryInMemory.create(role);
+    }
+
+    const roles10Params = {
+      page: 1,
+      limit: 10,
+    };
+
+    const roles5Params = {
+      page: 4,
+      limit: 5,
+    };
+
+    const roles30Params = {
+      page: 1,
+      limit: 30,
+    };
+
+    const firstGet10 = await listAllRolesPaginatedUseCase.execute(
+      roles10Params,
+    );
+
+    const firstGet5 = await listAllRolesPaginatedUseCase.execute(roles5Params);
+
+    const firstGet30 = await listAllRolesPaginatedUseCase.execute(
+      roles30Params,
+    );
+
+    const cacheKey10 = `${cachePrefixes.listAllRolesPaginated}:page:${roles10Params.page}:limit:${roles10Params.limit}`;
+
+    const cacheKey5 = `${cachePrefixes.listAllRolesPaginated}:page:${roles5Params.page}:limit:${roles5Params.limit}`;
+
+    const cacheKey30 = `${cachePrefixes.listAllRolesPaginated}:page:${roles30Params.page}:limit:${roles30Params.limit}`;
+
+    const spyOnCacheProvider = jest.spyOn(cacheProvider, "cacheGet");
+
+    const secondGet10 = await listAllRolesPaginatedUseCase.execute(
+      roles10Params,
+    );
+
+    const secondGet5 = await listAllRolesPaginatedUseCase.execute(roles5Params);
+
+    const secondGet30 = await listAllRolesPaginatedUseCase.execute(
+      roles30Params,
+    );
+
+    const spyCacheValueReturned10 = await spyOnCacheProvider.mock.results[0]
+      .value;
+
+    const spyCacheValueReturned5 = await spyOnCacheProvider.mock.results[1]
+      .value;
+
+    const spyCacheValueReturned30 = await spyOnCacheProvider.mock.results[2]
+      .value;
+
+    expect(JSON.stringify(firstGet10)).toBe(JSON.stringify(secondGet10));
+    expect(JSON.stringify(firstGet5)).toBe(JSON.stringify(secondGet5));
+    expect(JSON.stringify(firstGet30)).toBe(JSON.stringify(secondGet30));
+    expect(spyOnCacheProvider).toHaveBeenCalledWith(cacheKey10);
+    expect(spyOnCacheProvider).toHaveBeenCalledWith(cacheKey5);
+    expect(spyOnCacheProvider).toHaveBeenCalledWith(cacheKey30);
+    expect(spyCacheValueReturned10).toBe(JSON.stringify(firstGet10));
+    expect(spyCacheValueReturned5).toBe(JSON.stringify(firstGet5));
+    expect(spyCacheValueReturned30).toBe(JSON.stringify(firstGet30));
+  });
 });

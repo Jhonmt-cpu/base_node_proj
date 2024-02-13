@@ -155,16 +155,6 @@ describe("Delete User Controller", () => {
       throw new Error("Refresh token not created");
     }
 
-    await cacheProvider.cacheSet({
-      key: `${cachePrefixes.refreshToken}:${refreshToken[0].refresh_token_id}`,
-      value: JSON.stringify({
-        user_id: userInsertResponse[0].user_id,
-        user_name: user.user_name,
-        user_role: "Role user",
-      }),
-      expiresInSeconds: Number(auth.refresh.expiresInDays) * 24 * 60 * 60,
-    });
-
     const cacheGetUserKey = `${cachePrefixes.getUser}:${userInsertResponse[0].user_id}`;
 
     const cacheGetUserAddressKey = `${cachePrefixes.getUserAddress}:${userInsertResponse[0].user_id}`;
@@ -248,10 +238,6 @@ describe("Delete User Controller", () => {
         refresh_token_user_id: userInsertResponse[0].user_id,
       });
 
-    const refreshTokenCacheDeleted = await cacheProvider.cacheGet(
-      `${cachePrefixes.refreshToken}:${refreshToken[0].refresh_token_id}`,
-    );
-
     const userPhoneDeleted = await dbConnection<PhoneEntity>("tb_phones")
       .select("*")
       .where({
@@ -283,7 +269,6 @@ describe("Delete User Controller", () => {
     expect(response.status).toBe(204);
     expect(userDeleted).toBeUndefined();
     expect(refreshTokensDeleted).toHaveLength(0);
-    expect(refreshTokenCacheDeleted).toBeNull();
     expect(userPhoneDeleted).toBeUndefined();
     expect(userAddressDeleted).toBeUndefined();
     expect(cacheGetUserBefore).not.toBeNull();

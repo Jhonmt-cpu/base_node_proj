@@ -1,12 +1,8 @@
-import { v4 as uuid } from "uuid";
-
 import { CryptoEncryptAndDecryptProvider } from "@modules/auth/container/providers/EncryptAndDecryptProvider/implementations/CryptoEncryptAndDecryptProvider";
 import { JWTGenerateTokenProvider } from "@modules/auth/container/providers/GenerateTokenProvider/implementations/JWTGenerateTokenProvider";
 import { RefreshTokenRepositoryInMemory } from "@modules/auth/repositories/inMemory/RefreshTokenRepositoryInMemory";
-import { InMemoryCacheProvider } from "@shared/container/providers/CacheProvider/implementations/InMemoryCacheProvider";
 
 import auth from "@config/auth";
-import { cachePrefixes } from "@config/cache";
 
 import { AppError } from "@shared/errors/AppError";
 import { DatabaseInMemory } from "@shared/repositories/inMemory/DatabaseInMemory";
@@ -14,10 +10,10 @@ import { DayjsDateProvider } from "@shared/container/providers/DateProvider/impl
 import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
 
 import { RefreshTokenUseCase } from "./RefreshTokenUseCase";
+import { UserRepositoryInMemory } from "@modules/account/repositories/inMemory/UserRepositoryInMemory";
+import { RoleRepositoryInMemory } from "@modules/account/repositories/inMemory/RoleRepositoryInMemory";
 
 let dateProvider: DayjsDateProvider;
-
-let cacheProvider: InMemoryCacheProvider;
 
 let encryptAndDecryptProvider: CryptoEncryptAndDecryptProvider;
 
@@ -27,74 +23,94 @@ let dataBaseInMemory: DatabaseInMemory;
 
 let refreshTokenRepositoryInMemory: RefreshTokenRepositoryInMemory;
 
+let roleRepositoryInMemory: RoleRepositoryInMemory;
+
+let userRepositoryInMemory: UserRepositoryInMemory;
+
 let refreshTokenUseCase: RefreshTokenUseCase;
 
 describe("RefreshTokenUseCase", () => {
   beforeEach(() => {
     dateProvider = new DayjsDateProvider();
-    cacheProvider = new InMemoryCacheProvider(dateProvider);
     encryptAndDecryptProvider = new CryptoEncryptAndDecryptProvider();
     generateTokenProvider = new JWTGenerateTokenProvider(
       encryptAndDecryptProvider,
     );
     dataBaseInMemory = new DatabaseInMemory();
+    roleRepositoryInMemory = new RoleRepositoryInMemory(dataBaseInMemory);
     refreshTokenRepositoryInMemory = new RefreshTokenRepositoryInMemory(
       dataBaseInMemory,
     );
+    userRepositoryInMemory = new UserRepositoryInMemory(dataBaseInMemory);
 
     refreshTokenUseCase = new RefreshTokenUseCase(
-      cacheProvider,
       generateTokenProvider,
       dateProvider,
       refreshTokenRepositoryInMemory,
+      userRepositoryInMemory,
     );
   });
 
   it("should be able to refresh token", async () => {
-    const userData = {
-      user_id: 1,
-      user_name: "John Doe",
-      user_role: "role_test",
+    await roleRepositoryInMemory.create({
+      role_name: "role_test",
+    });
+
+    const user = {
+      user_name: "User Test",
+      user_email: "usertest@test.com",
+      user_password: "123456",
+      user_birth_date: new Date("2005-01-01"),
+      user_cpf: 12345678910,
+      user_gender_id: 1,
     };
 
+    const userResponse = await userRepositoryInMemory.create(user);
+
     const refreshToken = await refreshTokenRepositoryInMemory.create({
-      refresh_token_user_id: userData.user_id,
+      refresh_token_user_id: userResponse.user_id,
       refresh_token_expires_in: dateProvider.addDays(
         Number(auth.refresh.expiresInDays),
       ),
     });
 
-    await cacheProvider.cacheSet({
-      key: `${cachePrefixes.refreshToken}:${refreshToken.refresh_token_id}`,
-      value: JSON.stringify(userData),
-      expiresInSeconds: Number(auth.refresh.expiresInDays) * 24 * 60 * 60,
-    });
-
-    const token = await refreshTokenUseCase.execute({
+    const tokenResponse = await refreshTokenUseCase.execute({
       refresh_token: refreshToken.refresh_token_id,
     });
 
-    expect(token).toHaveProperty("token");
+    const refreshTokenDeleted = await refreshTokenRepositoryInMemory.findById(
+      refreshToken.refresh_token_id,
+    );
+
+    expect(tokenResponse).toHaveProperty("token");
+    expect(tokenResponse).toHaveProperty("refresh_token");
+    expect(refreshTokenDeleted).toBeUndefined();
+    expect(tokenResponse.refresh_token).not.toEqual(
+      refreshToken.refresh_token_id,
+    );
   });
 
   it("should not be able to refresh using same refresh token twice", async () => {
-    const userData = {
-      user_id: 1,
-      user_name: "John Doe",
-      user_role: "role_test",
+    await roleRepositoryInMemory.create({
+      role_name: "role_test",
+    });
+
+    const user = {
+      user_name: "User Test",
+      user_email: "usertest@test.com",
+      user_password: "123456",
+      user_birth_date: new Date("2005-01-01"),
+      user_cpf: 12345678910,
+      user_gender_id: 1,
     };
 
+    const userResponse = await userRepositoryInMemory.create(user);
+
     const refreshToken = await refreshTokenRepositoryInMemory.create({
-      refresh_token_user_id: userData.user_id,
+      refresh_token_user_id: userResponse.user_id,
       refresh_token_expires_in: dateProvider.addDays(
         Number(auth.refresh.expiresInDays),
       ),
-    });
-
-    await cacheProvider.cacheSet({
-      key: `${cachePrefixes.refreshToken}:${refreshToken.refresh_token_id}`,
-      value: JSON.stringify(userData),
-      expiresInSeconds: Number(auth.refresh.expiresInDays) * 24 * 60 * 60,
     });
 
     const firstRefresh = await refreshTokenUseCase.execute({
@@ -114,39 +130,22 @@ describe("RefreshTokenUseCase", () => {
         refresh_token: refreshToken.refresh_token_id,
       }),
     ).rejects.toEqual(
-      new AppError(AppErrorMessages.REFRESH_TOKEN_NOT_FOUND, 404),
+      new AppError(AppErrorMessages.REFRESH_TOKEN_INVALID, 400),
     );
   });
 
-  it("should not be able to refresh token if not found in cache", async () => {
-    await expect(
-      refreshTokenUseCase.execute({
-        refresh_token: uuid(),
-      }),
-    ).rejects.toEqual(
-      new AppError(AppErrorMessages.REFRESH_TOKEN_NOT_FOUND, 404),
-    );
-  });
-
-  it("should not be able to refresh token if not found in database", async () => {
-    const refresh_token = uuid();
-
-    await cacheProvider.cacheSet({
-      key: `${cachePrefixes.refreshToken}:${refresh_token}`,
-      value: JSON.stringify({
-        user_id: 1,
-        user_name: "Test User",
-        role_name: "Test Role",
-      }),
-      expiresInSeconds: Number(auth.refresh.expiresInDays) * 24 * 60 * 60,
+  it("should not be able to refresh token if user does not exists", async () => {
+    const refreshToken = await refreshTokenRepositoryInMemory.create({
+      refresh_token_user_id: 99999999,
+      refresh_token_expires_in: dateProvider.addDays(
+        Number(auth.refresh.expiresInDays),
+      ),
     });
 
     await expect(
       refreshTokenUseCase.execute({
-        refresh_token,
+        refresh_token: refreshToken.refresh_token_id,
       }),
-    ).rejects.toEqual(
-      new AppError(AppErrorMessages.REFRESH_TOKEN_INVALID, 400),
-    );
+    ).rejects.toEqual(new AppError(AppErrorMessages.USER_NOT_FOUND, 404));
   });
 });

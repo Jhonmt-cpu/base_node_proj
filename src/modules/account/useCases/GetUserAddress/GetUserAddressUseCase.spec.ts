@@ -61,6 +61,35 @@ describe("Get User Address", () => {
     expect(cacheValueAfter).toBe(JSON.stringify(address));
   });
 
+  it("should be able to get an user address from cache", async () => {
+    const addressCreated = await addressRepositoryInMemory.create({
+      user_address_id: 1,
+      address_street: "Street Test 2",
+      address_number: 123,
+      address_complement: "Complement Test",
+      address_zip_code: 12345678,
+      address_neighborhood_id: 1,
+    });
+
+    const firstResponse = await getUserAddressUseCase.execute({
+      user_address_id: addressCreated.user_address_id,
+    });
+
+    const spyCache = jest.spyOn(cacheProviderInMemory, "cacheGet");
+
+    const cacheKey = `${cachePrefixes.getUserAddress}:${addressCreated.user_address_id}`;
+
+    const secondResponse = await getUserAddressUseCase.execute({
+      user_address_id: addressCreated.user_address_id,
+    });
+
+    const returnedCacheFromSpy = await spyCache.mock.results[0].value;
+
+    expect(JSON.stringify(firstResponse)).toBe(JSON.stringify(secondResponse));
+    expect(spyCache).toHaveBeenCalledWith(cacheKey);
+    expect(returnedCacheFromSpy).toBe(JSON.stringify(firstResponse));
+  });
+
   it("should not be able to get an user address with invalid id", async () => {
     await expect(
       getUserAddressUseCase.execute({

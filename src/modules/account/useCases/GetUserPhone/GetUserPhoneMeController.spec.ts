@@ -71,6 +71,41 @@ describe("Get User Phone Me Controller", () => {
     expect(cacheValueAfter).toBe(JSON.stringify(response.body));
   });
 
+  it("should be able to get an user phone from cache", async () => {
+    const { user_email, user_password } = testConfig.user_test;
+
+    const authResponse = await request(app).post("/auth/login").send({
+      user_email,
+      user_password,
+    });
+
+    const { token: userToken, user } = authResponse.body;
+
+    const firstGetResponse = await request(app)
+      .get(`/account/user/me/phone`)
+      .set({
+        Authorization: `Bearer ${userToken}`,
+      });
+
+    const cacheKey = `${cachePrefixes.getUserPhone}:${user.user_id}`;
+
+    const spyCache = jest.spyOn(RedisCacheProvider.prototype, "cacheGet");
+
+    const secondGetResponse = await request(app)
+      .get(`/account/user/me/phone`)
+      .set({
+        Authorization: `Bearer ${userToken}`,
+      });
+
+    const valueReturnedCache = await spyCache.mock.results[0].value;
+
+    expect(firstGetResponse.status).toBe(200);
+    expect(secondGetResponse.status).toBe(200);
+    expect(firstGetResponse.body).toEqual(secondGetResponse.body);
+    expect(spyCache).toHaveBeenCalledWith(cacheKey);
+    expect(valueReturnedCache).toBe(JSON.stringify(firstGetResponse.body));
+  });
+
   it("should not be able to get a non existing user", async () => {
     const gender = await dbConnection<GenderEntity>("tb_genders")
       .insert({

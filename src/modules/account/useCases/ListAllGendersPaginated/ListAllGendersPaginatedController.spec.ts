@@ -131,6 +131,102 @@ describe("List All Genders Paginated Controller", () => {
     expect(cacheValueAfter7).toBe(JSON.stringify(response7.body));
   });
 
+  it("should be able to list all genders paginated and use cache", async () => {
+    const gendersToInsert = [];
+
+    for (let i = 0; i < 15; i++) {
+      gendersToInsert.push({
+        gender_name: `Gender ${i + 15}`,
+      });
+    }
+
+    await dbConnection<GenderEntity>("tb_genders").insert(gendersToInsert);
+
+    const genders10Params = {
+      page: 1,
+      limit: 10,
+    };
+
+    const genders20Params = {
+      page: 1,
+      limit: 20,
+    };
+
+    const genders7Params = {
+      page: 2,
+      limit: 7,
+    };
+
+    const firstGetResponse10 = await request(app)
+      .get("/account/gender")
+      .query(genders10Params)
+      .set("Authorization", `Bearer ${token}`);
+
+    const firstGetResponse20 = await request(app)
+      .get("/account/gender")
+      .query(genders20Params)
+      .set("Authorization", `Bearer ${token}`);
+
+    const firstGetResponse7 = await request(app)
+      .get("/account/gender")
+      .query(genders7Params)
+      .set("Authorization", `Bearer ${token}`);
+
+    const cacheKey10 = `${cachePrefixes.listAllGendersPaginated}:page:${genders10Params.page}:limit:${genders10Params.limit}`;
+
+    const cacheKey20 = `${cachePrefixes.listAllGendersPaginated}:page:${genders20Params.page}:limit:${genders20Params.limit}`;
+
+    const cacheKey7 = `${cachePrefixes.listAllGendersPaginated}:page:${genders7Params.page}:limit:${genders7Params.limit}`;
+
+    const spyCacheProvider = jest.spyOn(
+      RedisCacheProvider.prototype,
+      "cacheGet",
+    );
+
+    const secondGetResponse10 = await request(app)
+      .get("/account/gender")
+      .query(genders10Params)
+      .set("Authorization", `Bearer ${token}`);
+
+    const secondGetResponse20 = await request(app)
+      .get("/account/gender")
+      .query(genders20Params)
+      .set("Authorization", `Bearer ${token}`);
+
+    const secondGetResponse7 = await request(app)
+      .get("/account/gender")
+      .query(genders7Params)
+      .set("Authorization", `Bearer ${token}`);
+
+    const spyCacheReturnedValue10 = await spyCacheProvider.mock.results[0]
+      .value;
+
+    const spyCacheReturnedValue20 = await spyCacheProvider.mock.results[1]
+      .value;
+
+    const spyCacheReturnedValue7 = await spyCacheProvider.mock.results[2].value;
+
+    expect(firstGetResponse10.status).toBe(200);
+    expect(secondGetResponse10.status).toBe(200);
+    expect(firstGetResponse10.body).toEqual(secondGetResponse10.body);
+    expect(spyCacheProvider).toHaveBeenCalledWith(cacheKey10);
+    expect(spyCacheReturnedValue10).toBe(
+      JSON.stringify(firstGetResponse10.body),
+    );
+    expect(firstGetResponse20.status).toBe(200);
+    expect(secondGetResponse20.status).toBe(200);
+    expect(firstGetResponse20.body).toEqual(secondGetResponse20.body);
+    expect(spyCacheProvider).toHaveBeenCalledWith(cacheKey20);
+    expect(spyCacheReturnedValue20).toBe(
+      JSON.stringify(firstGetResponse20.body),
+    );
+    expect(firstGetResponse7.status).toBe(200);
+    expect(secondGetResponse7.status).toBe(200);
+    expect(firstGetResponse7.body).toEqual(secondGetResponse7.body);
+    expect(spyCacheProvider).toHaveBeenCalledWith(cacheKey7);
+    expect(spyCacheReturnedValue7).toBe(JSON.stringify(firstGetResponse7.body));
+  });
+
   it("should not be able to list all genders paginated with a normal user", async () => {
     const { user_email, user_password } = testConfig.user_test;
 

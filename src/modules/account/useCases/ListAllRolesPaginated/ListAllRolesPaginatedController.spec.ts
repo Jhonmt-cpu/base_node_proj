@@ -138,6 +138,103 @@ describe("List All Roles Paginated Controller", () => {
     expect(cacheValueAfter7).toEqual(JSON.stringify(response7.body));
   });
 
+  it("should be able to list all roles paginated from cache", async () => {
+    const rolesToInsert = [];
+
+    for (let i = 0; i < 15; i++) {
+      rolesToInsert.push({
+        role_name: `Role ${i + 15}`,
+      });
+    }
+
+    await dbConnection<RoleEntity>("tb_roles").insert(rolesToInsert);
+
+    const roles10Params = {
+      page: 1,
+      limit: 10,
+    };
+
+    const roles20Params = {
+      page: 1,
+      limit: 20,
+    };
+
+    const roles7Params = {
+      page: 2,
+      limit: 7,
+    };
+
+    const firstGetResponse10 = await request(app)
+      .get("/account/role")
+      .query(roles10Params)
+      .set("Authorization", `Bearer ${token}`);
+
+    const firstGetResponse20 = await request(app)
+      .get("/account/role")
+      .query(roles20Params)
+      .set("Authorization", `Bearer ${token}`);
+
+    const firstGetResponse7 = await request(app)
+      .get("/account/role")
+      .query(roles7Params)
+      .set("Authorization", `Bearer ${token}`);
+
+    const spyOnCacheProvider = jest.spyOn(
+      RedisCacheProvider.prototype,
+      "cacheGet",
+    );
+
+    const cacheKey10 = `${cachePrefixes.listAllRolesPaginated}:page:${roles10Params.page}:limit:${roles10Params.limit}`;
+
+    const cacheKey20 = `${cachePrefixes.listAllRolesPaginated}:page:${roles20Params.page}:limit:${roles20Params.limit}`;
+
+    const cacheKey7 = `${cachePrefixes.listAllRolesPaginated}:page:${roles7Params.page}:limit:${roles7Params.limit}`;
+
+    const secondGetResponse10 = await request(app)
+      .get("/account/role")
+      .query(roles10Params)
+      .set("Authorization", `Bearer ${token}`);
+
+    const secondGetResponse20 = await request(app)
+      .get("/account/role")
+      .query(roles20Params)
+      .set("Authorization", `Bearer ${token}`);
+
+    const secondGetResponse7 = await request(app)
+      .get("/account/role")
+      .query(roles7Params)
+      .set("Authorization", `Bearer ${token}`);
+
+    const spyCacheValueReturned10 = await spyOnCacheProvider.mock.results[0]
+      .value;
+
+    const spyCacheValueReturned20 = await spyOnCacheProvider.mock.results[1]
+      .value;
+
+    const spyCacheValueReturned7 = await spyOnCacheProvider.mock.results[2]
+      .value;
+
+    expect(firstGetResponse10.status).toBe(200);
+    expect(firstGetResponse20.status).toBe(200);
+    expect(firstGetResponse7.status).toBe(200);
+    expect(secondGetResponse10.status).toBe(200);
+    expect(secondGetResponse20.status).toBe(200);
+    expect(secondGetResponse7.status).toBe(200);
+    expect(firstGetResponse10.body).toEqual(secondGetResponse10.body);
+    expect(firstGetResponse20.body).toEqual(secondGetResponse20.body);
+    expect(firstGetResponse7.body).toEqual(secondGetResponse7.body);
+    expect(spyCacheValueReturned10).toBe(
+      JSON.stringify(firstGetResponse10.body),
+    );
+    expect(spyCacheValueReturned20).toBe(
+      JSON.stringify(firstGetResponse20.body),
+    );
+    expect(spyCacheValueReturned7).toBe(JSON.stringify(firstGetResponse7.body));
+    expect(spyOnCacheProvider).toHaveBeenCalledWith(cacheKey10);
+    expect(spyOnCacheProvider).toHaveBeenCalledWith(cacheKey20);
+    expect(spyOnCacheProvider).toHaveBeenCalledWith(cacheKey7);
+  });
+
   it("should not be able to list all roles paginated with a normal user", async () => {
     const { user_email, user_password } = testConfig.user_test;
 

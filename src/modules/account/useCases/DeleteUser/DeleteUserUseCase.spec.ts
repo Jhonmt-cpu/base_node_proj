@@ -49,7 +49,6 @@ describe("DeleteUserUseCase", () => {
     deleteUserUseCase = new DeleteUserUseCase(
       hashProvider,
       cacheProviderInMemory,
-      refreshTokenRepositoryInMemory,
       userRepositoryInMemory,
     );
   });
@@ -78,21 +77,11 @@ describe("DeleteUserUseCase", () => {
       address_zip_code: 12345678,
     });
 
-    const refreshToken = await refreshTokenRepositoryInMemory.create({
+    await refreshTokenRepositoryInMemory.create({
       refresh_token_user_id: user.user_id,
       refresh_token_expires_in: dateProvider.addDays(
         Number(auth.refresh.expiresInDays),
       ),
-    });
-
-    await cacheProviderInMemory.cacheSet({
-      key: `${cachePrefixes.refreshToken}:${refreshToken.refresh_token_id}`,
-      value: JSON.stringify({
-        user_id: user.user_id,
-        user_name: user.user_name,
-        user_role: "Role user",
-      }),
-      expiresInSeconds: Number(auth.refresh.expiresInDays) * 24 * 60 * 60,
     });
 
     const cacheGetUserKey = `${cachePrefixes.getUser}:${user.user_id}`;
@@ -170,9 +159,6 @@ describe("DeleteUserUseCase", () => {
     const tokensDeleted = await refreshTokenRepositoryInMemory.findAllByUserId(
       user.user_id,
     );
-    const refreshTokenCacheDeleted = await cacheProviderInMemory.cacheGet(
-      `${cachePrefixes.refreshToken}:${refreshToken.refresh_token_id}`,
-    );
     const userPhoneDeleted = await phoneRepositoryInMemory.findById(
       userPhone.user_phone_id,
     );
@@ -196,7 +182,6 @@ describe("DeleteUserUseCase", () => {
 
     expect(userDeleted).toBeUndefined();
     expect(tokensDeleted).toHaveLength(0);
-    expect(refreshTokenCacheDeleted).toBeNull();
     expect(userPhoneDeleted).toBeUndefined();
     expect(userAddressDeleted).toBeUndefined();
     expect(cacheGetUserBefore).not.toBeNull();
@@ -237,21 +222,11 @@ describe("DeleteUserUseCase", () => {
       address_zip_code: 12345678,
     });
 
-    const refreshToken = await refreshTokenRepositoryInMemory.create({
+    await refreshTokenRepositoryInMemory.create({
       refresh_token_user_id: userResponse.user_id,
       refresh_token_expires_in: dateProvider.addDays(
         Number(auth.refresh.expiresInDays),
       ),
-    });
-
-    await cacheProviderInMemory.cacheSet({
-      key: `${cachePrefixes.refreshToken}:${refreshToken.refresh_token_id}`,
-      value: JSON.stringify({
-        user_id: userResponse.user_id,
-        user_name: user.user_name,
-        user_role: "Role user",
-      }),
-      expiresInSeconds: Number(auth.refresh.expiresInDays) * 24 * 60 * 60,
     });
 
     const cacheGetUserKey = `${cachePrefixes.getUser}:${userResponse.user_id}`;
@@ -329,9 +304,7 @@ describe("DeleteUserUseCase", () => {
     const tokensDeleted = await refreshTokenRepositoryInMemory.findAllByUserId(
       userResponse.user_id,
     );
-    const refreshTokenCacheDeleted = await cacheProviderInMemory.cacheGet(
-      `${cachePrefixes.refreshToken}:${refreshToken.refresh_token_id}`,
-    );
+
     const userPhoneDeleted = await phoneRepositoryInMemory.findById(
       userPhone.user_phone_id,
     );
@@ -355,7 +328,6 @@ describe("DeleteUserUseCase", () => {
 
     expect(userDeleted).toBeUndefined();
     expect(tokensDeleted).toHaveLength(0);
-    expect(refreshTokenCacheDeleted).toBeNull();
     expect(userPhoneDeleted).toBeUndefined();
     expect(userAddressDeleted).toBeUndefined();
     expect(cacheGetUserBefore).not.toBeNull();

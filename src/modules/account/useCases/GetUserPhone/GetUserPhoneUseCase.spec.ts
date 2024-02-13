@@ -69,6 +69,41 @@ describe("GetUserPhoneUseCase", () => {
     expect(cacheValueAfter).not.toBeNull();
   });
 
+  it("should be able to get a user phone from cache", async () => {
+    const user = await userRepositoryInMemory.create({
+      user_name: "User Test 2",
+      user_email: "usertest2@test.com",
+      user_password: "123456",
+      user_cpf: 12345678911,
+      user_gender_id: 1,
+      user_birth_date: new Date("2005-01-01"),
+    });
+
+    await phoneRepositoryInMemory.create({
+      user_phone_id: user.user_id,
+      phone_number: 12345678911,
+      phone_ddd: 11,
+    });
+
+    const firstResponse = await getUserPhoneUseCase.execute({
+      user_id: user.user_id,
+    });
+
+    const spyCache = jest.spyOn(cacheProvider, "cacheGet");
+
+    const cacheKey = `${cachePrefixes.getUserPhone}:${user.user_id}`;
+
+    const secondResponse = await getUserPhoneUseCase.execute({
+      user_id: user.user_id,
+    });
+
+    const returnedCacheFromSpy = await spyCache.mock.results[0].value;
+
+    expect(JSON.stringify(firstResponse)).toBe(JSON.stringify(secondResponse));
+    expect(spyCache).toHaveBeenCalledWith(cacheKey);
+    expect(returnedCacheFromSpy).toBe(JSON.stringify(firstResponse));
+  });
+
   it("should not be able to get a user phone if it does not exists", async () => {
     await expect(
       getUserPhoneUseCase.execute({

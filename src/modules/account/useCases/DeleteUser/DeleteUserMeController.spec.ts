@@ -181,7 +181,7 @@ describe("Delete User Me Controller", () => {
       user_password: user.user_password,
     });
 
-    const { token: normalToken, refresh_token } = userLoginResponse.body;
+    const { token: normalToken } = userLoginResponse.body;
 
     const response = await request(app)
       .delete(`/account/user/me`)
@@ -206,10 +206,6 @@ describe("Delete User Me Controller", () => {
       .where({
         refresh_token_user_id: userInsertResponse[0].user_id,
       });
-
-    const refreshTokenCacheDeleted = await cacheProvider.cacheGet(
-      `${cachePrefixes.refreshToken}:${refresh_token}`,
-    );
 
     const userPhoneDeleted = await dbConnection<PhoneEntity>("tb_phones")
       .select("*")
@@ -242,7 +238,6 @@ describe("Delete User Me Controller", () => {
     expect(response.status).toBe(204);
     expect(userDeleted).toBeUndefined();
     expect(refreshTokensDeleted).toHaveLength(0);
-    expect(refreshTokenCacheDeleted).toBeNull();
     expect(userPhoneDeleted).toBeUndefined();
     expect(userAddressDeleted).toBeUndefined();
     expect(cacheGetUserBefore).not.toBeNull();
@@ -338,7 +333,7 @@ describe("Delete User Me Controller", () => {
       user_password: user.user_password,
     });
 
-    const { token: normalToken, refresh_token } = userLoginResponse.body;
+    const { token: normalToken } = userLoginResponse.body;
 
     const response = await request(app)
       .delete(`/account/user/me`)
@@ -364,10 +359,6 @@ describe("Delete User Me Controller", () => {
         refresh_token_user_id: userInsertResponse[0].user_id,
       });
 
-    const refreshTokenCacheDeleted = await cacheProvider.cacheGet(
-      `${cachePrefixes.refreshToken}:${refresh_token}`,
-    );
-
     const userPhoneDeleted = await dbConnection<PhoneEntity>("tb_phones")
       .select("*")
       .where({
@@ -388,7 +379,6 @@ describe("Delete User Me Controller", () => {
     );
     expect(userDeleted).toHaveProperty("user_id");
     expect(refreshTokensDeleted).toHaveLength(1);
-    expect(refreshTokenCacheDeleted).not.toBeNull();
     expect(userPhoneDeleted).toHaveProperty("user_phone_id");
     expect(userAddressDeleted).toHaveProperty("user_address_id");
   });

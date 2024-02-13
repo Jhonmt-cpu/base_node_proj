@@ -154,6 +154,111 @@ describe("List All Users Paginated Controller", () => {
     expect(cache7After).toBe(JSON.stringify(response7.body));
   });
 
+  it("should be able to list all users paginated from cache", async () => {
+    const gender = await dbConnection<GenderEntity>("tb_genders")
+      .insert({
+        gender_name: "New Gender 2",
+      })
+      .returning("*");
+
+    if (!gender[0]) {
+      throw new Error("Gender not created");
+    }
+
+    const usersToInsert = [];
+
+    for (let i = 0; i < 15; i++) {
+      usersToInsert.push({
+        user_name: `User ${i + 15}`,
+        user_email: `user${i + 15}@email.com`,
+        user_password: "12345678",
+        user_birth_date: new Date(),
+        user_cpf: 12345678910 + i + 15,
+        user_gender_id: gender[0].gender_id,
+      });
+    }
+
+    await dbConnection<UserEntity>("tb_users").insert(usersToInsert);
+
+    const users10Params = {
+      page: 1,
+      limit: 10,
+    };
+
+    const users20Params = {
+      page: 1,
+      limit: 20,
+    };
+
+    const users7Params = {
+      page: 2,
+      limit: 7,
+    };
+
+    const firstGetResponse10 = await request(app)
+      .get("/account/user")
+      .query(users10Params)
+      .set("Authorization", `Bearer ${token}`);
+
+    const firstGetResponse20 = await request(app)
+      .get("/account/user")
+      .query(users20Params)
+      .set("Authorization", `Bearer ${token}`);
+
+    const firstGetResponse7 = await request(app)
+      .get("/account/user")
+      .query(users7Params)
+      .set("Authorization", `Bearer ${token}`);
+
+    const spyOnCacheProvider = jest.spyOn(
+      RedisCacheProvider.prototype,
+      "cacheGet",
+    );
+
+    const cache10Key = `${cachePrefixes.listAllUsersPaginated}:page:${users10Params.page}:limit:${users10Params.limit}`;
+
+    const cache20Key = `${cachePrefixes.listAllUsersPaginated}:page:${users20Params.page}:limit:${users20Params.limit}`;
+
+    const cache7Key = `${cachePrefixes.listAllUsersPaginated}:page:${users7Params.page}:limit:${users7Params.limit}`;
+
+    const secondGetResponse10 = await request(app)
+      .get("/account/user")
+      .query(users10Params)
+      .set("Authorization", `Bearer ${token}`);
+
+    const secondGetResponse20 = await request(app)
+      .get("/account/user")
+      .query(users20Params)
+      .set("Authorization", `Bearer ${token}`);
+
+    const secondGetResponse7 = await request(app)
+      .get("/account/user")
+      .query(users7Params)
+      .set("Authorization", `Bearer ${token}`);
+
+    const cacheReturnedValue10 = await spyOnCacheProvider.mock.results[0].value;
+
+    const cacheReturnedValue20 = await spyOnCacheProvider.mock.results[1].value;
+
+    const cacheReturnedValue7 = await spyOnCacheProvider.mock.results[2].value;
+
+    expect(firstGetResponse10.status).toBe(200);
+    expect(firstGetResponse20.status).toBe(200);
+    expect(firstGetResponse7.status).toBe(200);
+    expect(secondGetResponse10.status).toBe(200);
+    expect(secondGetResponse20.status).toBe(200);
+    expect(secondGetResponse7.status).toBe(200);
+    expect(firstGetResponse10.body).toEqual(secondGetResponse10.body);
+    expect(firstGetResponse20.body).toEqual(secondGetResponse20.body);
+    expect(firstGetResponse7.body).toEqual(secondGetResponse7.body);
+    expect(spyOnCacheProvider).toHaveBeenCalledWith(cache10Key);
+    expect(spyOnCacheProvider).toHaveBeenCalledWith(cache20Key);
+    expect(spyOnCacheProvider).toHaveBeenCalledWith(cache7Key);
+    expect(cacheReturnedValue10).toBe(JSON.stringify(firstGetResponse10.body));
+    expect(cacheReturnedValue20).toBe(JSON.stringify(firstGetResponse20.body));
+    expect(cacheReturnedValue7).toBe(JSON.stringify(firstGetResponse7.body));
+  });
+
   it("should not be able to list all users paginated with a normal user", async () => {
     const { user_email, user_password } = testConfig.user_test;
 

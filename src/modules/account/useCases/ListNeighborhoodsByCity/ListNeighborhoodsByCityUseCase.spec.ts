@@ -81,6 +81,43 @@ describe("List Cities By State", () => {
     expect(cacheValueAfter).not.toBeNull();
   });
 
+  it("should be able to list all neighborhoods by city from cache", async () => {
+    const city = await cityRepositoryInMemory.create({
+      city_name: "city_test",
+      city_state_id: 1,
+    });
+
+    await neighborhoodRepositoryInMemory.create({
+      neighborhood_name: "neighborhood_test",
+      neighborhood_city_id: city.city_id,
+    });
+
+    await neighborhoodRepositoryInMemory.create({
+      neighborhood_name: "neighborhood_test2",
+      neighborhood_city_id: city.city_id,
+    });
+
+    const firstResponse = await listNeighborhoodsByCityUseCase.execute({
+      city_id: city.city_id,
+    });
+
+    const cacheKey = `${cachePrefixes.listNeighborhoodsByCity}:city_id:${city.city_id}`;
+
+    const spyOnCache = jest.spyOn(cacheProvider, "cacheGet");
+
+    const secondResponse = await listNeighborhoodsByCityUseCase.execute({
+      city_id: city.city_id,
+    });
+
+    const valueCacheReturned = await spyOnCache.mock.results[0].value;
+
+    expect(JSON.stringify(firstResponse)).toEqual(
+      JSON.stringify(secondResponse),
+    );
+    expect(spyOnCache).toHaveBeenCalledWith(cacheKey);
+    expect(JSON.stringify(firstResponse)).toEqual(valueCacheReturned);
+  });
+
   it("should not be able to list all cities by state if state not exists", async () => {
     await expect(
       listNeighborhoodsByCityUseCase.execute({

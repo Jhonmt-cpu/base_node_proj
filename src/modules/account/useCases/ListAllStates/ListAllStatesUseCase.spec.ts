@@ -49,4 +49,27 @@ describe("List All States", () => {
     expect(cacheValueBefore).toBe(null);
     expect(cacheValueAfter).not.toBe(null);
   });
+
+  it("should be able to list all states from cache", async () => {
+    await stateRepositoryInMemory.create({
+      state_name: "state_test 2",
+      state_uf: "ST2",
+    });
+
+    const firstResponse = await listAllStatesUseCase.execute();
+
+    const cacheKey = cachePrefixes.listAllStates;
+
+    const spyOnCache = jest.spyOn(cacheProvider, "cacheGet");
+
+    const secondResponse = await listAllStatesUseCase.execute();
+
+    const cacheValueReturned = await spyOnCache.mock.results[0].value;
+
+    expect(JSON.stringify(firstResponse)).toEqual(
+      JSON.stringify(secondResponse),
+    );
+    expect(spyOnCache).toHaveBeenCalledWith(cacheKey);
+    expect(cacheValueReturned).toBe(JSON.stringify(firstResponse));
+  });
 });

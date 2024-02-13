@@ -61,6 +61,9 @@ type IUserRepository = {
   findByEmailWithRole(
     user_email: string,
   ): Promise<IFlatUserWithRoleResponseRepositoryDTO | undefined>;
+  findByIdWithRole(
+    user_id: number,
+  ): Promise<IFlatUserWithRoleResponseRepositoryDTO | undefined>;
   findByIdWithoutPassword(
     user_id: number,
   ): Promise<IUserWithoutPasswordRepositoryDTO | undefined>;

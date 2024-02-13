@@ -1,24 +1,20 @@
-import { DatabaseInMemory } from "@shared/repositories/inMemory/DatabaseInMemory";
-
 import { UserRepositoryInMemory } from "@modules/account/repositories/inMemory/UserRepositoryInMemory";
-import { InMemoryHashProvider } from "@shared/container/providers/HashProvider/implementations/InMemoryHashProvider";
-import { DayjsDateProvider } from "@shared/container/providers/DateProvider/implementations/DayjsDateProvider";
 import { JWTGenerateTokenProvider } from "@modules/auth/container/providers/GenerateTokenProvider/implementations/JWTGenerateTokenProvider";
 import { CryptoEncryptAndDecryptProvider } from "@modules/auth/container/providers/EncryptAndDecryptProvider/implementations/CryptoEncryptAndDecryptProvider";
 import { RefreshTokenRepositoryInMemory } from "@modules/auth/repositories/inMemory/RefreshTokenRepositoryInMemory";
 import { RoleRepositoryInMemory } from "@modules/account/repositories/inMemory/RoleRepositoryInMemory";
-import { InMemoryCacheProvider } from "@shared/container/providers/CacheProvider/implementations/InMemoryCacheProvider";
 
+import { InMemoryHashProvider } from "@shared/container/providers/HashProvider/implementations/InMemoryHashProvider";
+import { DayjsDateProvider } from "@shared/container/providers/DateProvider/implementations/DayjsDateProvider";
+import { DatabaseInMemory } from "@shared/repositories/inMemory/DatabaseInMemory";
 import { AppError } from "@shared/errors/AppError";
+import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
 
 import { LoginUseCase } from "./LoginUseCase";
-import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
 
 let hashProvider: InMemoryHashProvider;
 
 let dateProvider: DayjsDateProvider;
-
-let inMemoryCacheProvider: InMemoryCacheProvider;
 
 let encryptAndDecryptProvider: CryptoEncryptAndDecryptProvider;
 
@@ -38,7 +34,6 @@ describe("LoginUseCase", () => {
   beforeEach(() => {
     hashProvider = new InMemoryHashProvider();
     dateProvider = new DayjsDateProvider();
-    inMemoryCacheProvider = new InMemoryCacheProvider(dateProvider);
     encryptAndDecryptProvider = new CryptoEncryptAndDecryptProvider();
     generateTokenProvider = new JWTGenerateTokenProvider(
       encryptAndDecryptProvider,
@@ -53,7 +48,6 @@ describe("LoginUseCase", () => {
     loginUseCase = new LoginUseCase(
       hashProvider,
       generateTokenProvider,
-      inMemoryCacheProvider,
       dateProvider,
       userRepositoryInMemory,
       refreshTokenRepositoryInMemory,
@@ -61,7 +55,7 @@ describe("LoginUseCase", () => {
   });
 
   it("should be able to login", async () => {
-    const role = await roleRepositoryInMemory.create({
+    await roleRepositoryInMemory.create({
       role_name: "role_test",
     });
 
@@ -74,7 +68,7 @@ describe("LoginUseCase", () => {
       user_gender_id: 1,
     };
 
-    const userResponse = await userRepositoryInMemory.create(user);
+    await userRepositoryInMemory.create(user);
 
     const result = await loginUseCase.execute({
       user_email: user.user_email,
@@ -85,20 +79,9 @@ describe("LoginUseCase", () => {
       result.refresh_token,
     );
 
-    const tokenCacheSaved = await inMemoryCacheProvider.cacheGet(
-      `refresh_token:${result.refresh_token}`,
-    );
-
     expect(result).toHaveProperty("token");
     expect(result).toHaveProperty("refresh_token");
     expect(result).toHaveProperty("user");
-    expect(tokenCacheSaved).toBe(
-      JSON.stringify({
-        user_id: userResponse.user_id,
-        user_name: user.user_name,
-        user_role: role.role_name,
-      }),
-    );
     expect(tokenDatabaseSaved).toHaveProperty("refresh_token_id");
   });
 
@@ -155,7 +138,7 @@ describe("LoginUseCase", () => {
   });
 
   it("should remove old refresh tokens when login", async () => {
-    const role = await roleRepositoryInMemory.create({
+    await roleRepositoryInMemory.create({
       role_name: "role_test",
     });
 
@@ -168,7 +151,7 @@ describe("LoginUseCase", () => {
       user_gender_id: 1,
     };
 
-    const userResponse = await userRepositoryInMemory.create(user);
+    await userRepositoryInMemory.create(user);
 
     const result1 = await loginUseCase.execute({
       user_email: user.user_email,
@@ -184,29 +167,14 @@ describe("LoginUseCase", () => {
       result1.refresh_token,
     );
 
-    const tokenCacheSaved1 = await inMemoryCacheProvider.cacheGet(
-      `refresh_token:${result1.refresh_token}`,
-    );
-
     const tokenDatabaseSaved2 = await refreshTokenRepositoryInMemory.findById(
       result2.refresh_token,
-    );
-
-    const tokenCacheSaved2 = await inMemoryCacheProvider.cacheGet(
-      `refresh_token:${result2.refresh_token}`,
     );
 
     expect(result2).toHaveProperty("token");
     expect(result2).toHaveProperty("refresh_token");
     expect(result2).toHaveProperty("user");
-    expect(tokenCacheSaved1).toBeNull();
-    expect(tokenCacheSaved2).toBe(
-      JSON.stringify({
-        user_id: userResponse.user_id,
-        user_name: user.user_name,
-        user_role: role.role_name,
-      }),
-    );
+
     expect(tokenDatabaseSaved1).toBeUndefined();
     expect(tokenDatabaseSaved2).toHaveProperty("refresh_token_id");
   });

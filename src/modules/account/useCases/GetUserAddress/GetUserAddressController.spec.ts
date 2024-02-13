@@ -150,6 +150,110 @@ describe("Get User Address Controller", () => {
     expect(cacheValueAfter).toBe(JSON.stringify(response.body));
   });
 
+  it("should be able to get a user address with an admin request and get from cache", async () => {
+    const gender = await dbConnection<GenderEntity>("tb_genders")
+      .insert({
+        gender_name: "New Gender 2",
+      })
+      .returning("*");
+
+    if (!gender[0]) {
+      throw new Error("Gender not created");
+    }
+
+    const state = await dbConnection<StateEntity>("tb_states")
+      .insert({
+        state_name: "New State 2",
+        state_uf: "NS",
+      })
+      .returning("*");
+
+    if (!state[0]) {
+      throw new Error("State not created");
+    }
+
+    const city = await dbConnection<CityEntity>("tb_cities")
+      .insert({
+        city_name: "New City 2",
+        city_state_id: state[0].state_id,
+      })
+      .returning("*");
+
+    if (!city[0]) {
+      throw new Error("City not created");
+    }
+
+    const neighborhood = await dbConnection<NeighborhoodEntity>(
+      "tb_neighborhoods",
+    )
+      .insert({
+        neighborhood_name: "New Neighborhood 2",
+        neighborhood_city_id: city[0].city_id,
+      })
+      .returning("*");
+
+    if (!neighborhood[0]) {
+      throw new Error("Neighborhood not created");
+    }
+
+    const user = {
+      user_name: "User Test 2",
+      user_email: "usertest2@test.com",
+      user_birth_date: new Date(),
+      user_password: "12345678",
+      user_cpf: 12345678911,
+      user_gender_id: gender[0].gender_id,
+    };
+
+    const userInsertResponse = await dbConnection<UserEntity>("tb_users")
+      .insert(user)
+      .returning("*");
+
+    if (!userInsertResponse[0]) {
+      throw new Error("User not created");
+    }
+
+    const userAddressInsertResponse = await dbConnection<AddressEntity>(
+      "tb_addresses",
+    )
+      .insert({
+        address_street: "New Street 2",
+        address_number: 123,
+        address_neighborhood_id: neighborhood[0].neighborhood_id,
+        user_address_id: userInsertResponse[0].user_id,
+        address_zip_code: 12345678,
+      })
+      .returning("*");
+
+    if (!userAddressInsertResponse[0]) {
+      throw new Error("User Address not created");
+    }
+
+    const firstGetResponse = await request(app)
+      .get(`/account/user/${userInsertResponse[0].user_id}/address`)
+      .set({
+        Authorization: `Bearer ${token}`,
+      });
+
+    const cacheKey = `${cachePrefixes.getUserAddress}:${userAddressInsertResponse[0].user_address_id}`;
+
+    const spyCache = jest.spyOn(RedisCacheProvider.prototype, "cacheGet");
+
+    const secondGetResponse = await request(app)
+      .get(`/account/user/${userInsertResponse[0].user_id}/address`)
+      .set({
+        Authorization: `Bearer ${token}`,
+      });
+
+    const returnedCache = await spyCache.mock.results[0].value;
+
+    expect(firstGetResponse.status).toBe(200);
+    expect(secondGetResponse.status).toBe(200);
+    expect(firstGetResponse.body).toEqual(secondGetResponse.body);
+    expect(spyCache).toHaveBeenCalledWith(cacheKey);
+    expect(returnedCache).toBe(JSON.stringify(firstGetResponse.body));
+  });
+
   it("should not be able to get a user address with an admin request if user does not exist", async () => {
     const response = await request(app)
       .get(`/account/user/99999/address`)

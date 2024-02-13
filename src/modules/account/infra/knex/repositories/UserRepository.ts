@@ -116,6 +116,25 @@ class UserRepository implements IUserRepository {
     return user;
   }
 
+  async findByIdWithRole(
+    user_id: number,
+  ): Promise<IFlatUserWithRoleResponseRepositoryDTO | undefined> {
+    const user = await dbConnection<UserEntity>("tb_users")
+      .select("*")
+      .join<RoleEntity>(
+        "tb_roles",
+        "tb_users.user_role_id",
+        "=",
+        "tb_roles.role_id",
+      )
+      .where({
+        user_id,
+      })
+      .first();
+
+    return user;
+  }
+
   async findByIdWithoutPassword(
     user_id: number,
   ): Promise<IUserWithoutPasswordRepositoryDTO | undefined> {

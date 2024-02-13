@@ -1,7 +1,6 @@
 import { inject, injectable } from "tsyringe";
 
 import auth from "@config/auth";
-import { cachePrefixes } from "@config/cache";
 
 import { ILoginDTO } from "@modules/auth/@types/ILoginDTO";
 import { IGenerateTokenProvider } from "@modules/auth/container/providers/GenerateTokenProvider/IGenerateTokenProvider";
@@ -10,7 +9,6 @@ import { IUserRepository } from "@modules/account/repositories/IUserRepository";
 
 import { IDateProvider } from "@shared/container/providers/DateProvider/IDateProvider";
 import { IHashProvider } from "@shared/container/providers/HashProvider/IHashProvider";
-import { ICacheProvider } from "@shared/container/providers/CacheProvider/ICacheProvider";
 
 import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
 import { AppError } from "@shared/errors/AppError";
@@ -22,8 +20,6 @@ class LoginUseCase {
     private hashProvider: IHashProvider,
     @inject("GenerateTokenProvider")
     private generateTokenProvider: IGenerateTokenProvider,
-    @inject("CacheProvider")
-    private cacheProvider: ICacheProvider,
     @inject("DateProvider")
     private dateProvider: IDateProvider,
     @inject("UserRepository")
@@ -54,15 +50,6 @@ class LoginUseCase {
       user_role: user.role_name,
     });
 
-    const refreshTokensRepository =
-      await this.refreshTokenRepository.findAllByUserId(user.user_id);
-
-    for await (const refreshToken of refreshTokensRepository) {
-      await this.cacheProvider.cacheDel(
-        `${cachePrefixes.refreshToken}:${refreshToken.refresh_token_id}`,
-      );
-    }
-
     await this.refreshTokenRepository.deleteAllByUserId(user.user_id);
 
     const refreshTokenExpiresIn = this.dateProvider.addDays(
@@ -72,16 +59,6 @@ class LoginUseCase {
     const refreshToken = await this.refreshTokenRepository.create({
       refresh_token_user_id: user.user_id,
       refresh_token_expires_in: refreshTokenExpiresIn,
-    });
-
-    await this.cacheProvider.cacheSet({
-      key: `${cachePrefixes.refreshToken}:${refreshToken.refresh_token_id}`,
-      value: JSON.stringify({
-        user_id: user.user_id,
-        user_name: user.user_name,
-        user_role: user.role_name,
-      }),
-      expiresInSeconds: Number(auth.refresh.expiresInDays) * 24 * 60 * 60,
     });
 
     return {

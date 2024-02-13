@@ -64,6 +64,29 @@ describe("List All States Controller", () => {
     expect(cacheValueAfter).toEqual(JSON.stringify(allStatesWithDateStrings));
   });
 
+  it("should be able to list all states from cache", async () => {
+    await dbConnection<StateEntity>("tb_states").insert({
+      state_name: "New State 2",
+      state_uf: "NS",
+    });
+
+    const firstGetResponse = await request(app).get("/account/state/all");
+
+    const cacheKey = cachePrefixes.listAllStates;
+
+    const spyOnCache = jest.spyOn(RedisCacheProvider.prototype, "cacheGet");
+
+    const secondGetResponse = await request(app).get("/account/state/all");
+
+    const valueCacheReturned = await spyOnCache.mock.results[0].value;
+
+    expect(firstGetResponse.status).toBe(200);
+    expect(secondGetResponse.status).toBe(200);
+    expect(firstGetResponse.body).toEqual(secondGetResponse.body);
+    expect(spyOnCache).toHaveBeenCalledWith(cacheKey);
+    expect(JSON.stringify(firstGetResponse.body)).toEqual(valueCacheReturned);
+  });
+
   it("should return 204 if states are empty", async () => {
     await dbConnection<UserEntity>("tb_users").del();
 
