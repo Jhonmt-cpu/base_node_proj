@@ -1,0 +1,1024 @@
+openapi: 3.0.0
+info:
+  title: Easy Find API
+  description: API for Easy Find
+  version: 1.0.0
+servers:
+  - url: http://localhost:3333
+    description: Development server
+  - url: https://easyfind-api.herokuapp.com
+    description: Production server
+paths:
+  /account/role:
+    post:
+      tags:
+        - Role
+      description: Create a new role
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                role_name:
+                  type: string
+              required:
+                - name
+      responses:
+        201:
+          description: Role created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Role'
+        400:
+          description: Role already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    get:
+      description: List all roles paginated
+      tags:
+        - Role
+      parameters:
+        - name: page
+          in: query
+          required: true
+          schema:
+            type: number
+        - name: limit
+          in: query
+          required: true
+          schema:
+            type: number
+      responses:
+        200:
+          description: List of roles
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Role'
+        204:
+          description: No roles found
+          content:
+            application/json:
+              schema:
+                type: array
+
+  /account/gender:
+    post:
+      description: Create a new Gender
+      tags:
+        - Gender
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                gender_name:
+                  type: string
+      responses:
+        201:
+          description: Gender Created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Gender'
+        400:
+          description: Gender already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    get:
+      description: List all genders paginated
+      tags:
+        - Gender
+      parameters:
+        - name: page
+          in: query
+          required: true
+          schema:
+            type: number
+        - name: limit
+          in: query
+          required: true
+          schema:
+            type: number
+      responses:
+        200:
+          description: List of genders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Gender'
+        204:
+          description: No genders found
+          content:
+            application/json:
+              schema:
+                type: array
+
+  /account/gender/all:
+    get:
+      description: List all genders
+      tags:
+        - Gender
+      responses:
+        200:
+          description: List of genders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Gender'
+        204:
+          description: No genders found
+          content:
+            application/json:
+              schema:
+                type: array
+
+  /account/state:
+    post:
+      description: Create a new state
+      tags:
+        - State
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                state_name:
+                  type: string
+                state_uf:
+                  type: string
+      responses:
+        201:
+          description: State created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/State'
+        400:
+          description: State already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /account/state/all:
+    get:
+      description: List all states
+      tags:
+        - State
+      responses:
+        200:
+          description: List of states
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/State'
+        204:
+          description: No states found
+          content:
+            application/json:
+              schema:
+                type: array
+
+  /account/state/{state_id}/city:
+    get:
+      tags:
+        - State
+      description: List all cities from a state
+      parameters:
+        - name: state_id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        200:
+          description: List of cities
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/City'
+        204:
+          description: No cities found
+          content:
+            application/json:
+              schema:
+                type: array
+        404:
+          description: State not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /account/city:
+    post:
+      description: Create a new city
+      tags:
+        - City
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                city_name:
+                  type: string
+                city_state_id:
+                  type: number
+      responses:
+        201:
+          description: City created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/City'
+        404:
+          description: State not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        400:
+          description: City already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        
+  /account/city/{city_id}/neighborhood:
+    get:
+      description: List all neighborhoods from a city
+      tags:
+        - City
+      parameters:
+        - name: city_id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        200:
+          description: List of neighborhoods
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Neighborhood'
+        204:
+          description: No neighborhoods found
+          content:
+            application/json:
+              schema:
+                type: array
+        404:
+          description: City not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /account/neighborhood:
+    post:
+      description: Create a new neighborhood
+      tags:
+        - Neighborhood
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                neighborhood_name:
+                  type: string
+                neighborhood_city_id:
+                  type: number
+      responses:
+        201:
+          description: Neighborhood created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Neighborhood'
+        404:
+          description: City not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        400:
+          description: Neighborhood already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /account/user:
+    post:
+      description: Create a new user
+      tags:
+        - User
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_name:
+                  type: string
+                user_email:
+                  type: string
+                user_password:
+                  type: string
+                user_cpf:
+                  type: string
+                user_gender_id:
+                  type: number
+                user_birth_date:
+                  type: string
+                user_phone:
+                  type: string
+                user_address:
+                  type: object
+                  properties:
+                    address_street:
+                      type: string
+                    address_number:
+                      type: number
+                    address_complement:
+                      type: string  
+                    address_neighborhood_id:
+                      type: number
+                    address_zip_code:
+                      type: string
+                  
+      responses:
+        201:
+          description: User created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserCreateResponse'
+        404:
+          description: Gender or neighborhood not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        400:
+          description: User already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    get:
+      description: List all users paginated
+      tags:
+        - User
+      parameters:
+        - name: page
+          in: query
+          required: true
+          schema:
+            type: number
+        - name: limit
+          in: query
+          required: true
+          schema:
+            type: number
+      responses:
+        200:
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/UserWithoutPassword'
+        204:
+          description: No users found
+          content:
+            application/json:
+              schema:
+                type: array
+  /account/user/me:
+    get:
+      description: Get current logged user data
+      tags:
+        - User
+      responses:
+        200:
+          description: User data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserWithoutPassword'
+        404:
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    patch:
+      description: Update current logged user
+      tags:
+        - User
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_name:
+                  type: string
+                user_email:
+                  type: string
+                user_password:
+                  type: string
+                user_new_password:
+                  type: string
+                user_gender_id:
+                  type: number
+                user_phone:
+                  type: string
+                user_address:
+                  type: object
+                  properties:
+                    address_street:
+                      type: string
+                    address_number:
+                      type: number
+                    address_complement:
+                      type: string  
+                    address_neighborhood_id:
+                      type: number
+                    address_zip_code:
+                      type: string
+      responses:
+        200:
+          description: User updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserUpdateResponse'
+        404:
+          description: User, gender, phone, address or neighborhood not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        401:
+          description: Incorrect password
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        400:
+          description: Email or phone already in use
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      description: Delete current logged user
+      tags:
+        - User
+      parameters:
+        - name: user_password
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        204:
+          description: User deleted
+        404:
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        401:
+          description: Wrong password
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /account/user/{user_id}:
+    get:
+      description: Get user data
+      tags:
+        - User
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        200:
+          description: User data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserWithoutPassword'
+        404:
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    patch:
+      description: Update user
+      tags:
+        - User
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: number
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_name:
+                  type: string
+                user_email:
+                  type: string
+                user_new_password:
+                  type: string
+                user_gender_id:
+                  type: number
+                user_phone:
+                  type: string
+                user_address:
+                  type: object
+                  properties:
+                    address_street:
+                      type: string
+                    address_number:
+                      type: number
+                    address_complement:
+                      type: string  
+                    address_neighborhood_id:
+                      type: number
+                    address_zip_code:
+                      type: string
+      responses:
+        200:
+          description: User updated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserUpdateResponse'
+        404:
+          description: User, gender, phone, address or neighborhood not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        400:
+          description: Email or phone already in use
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    delete:
+      description: Delete user
+      tags:
+        - User
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        204:
+          description: User deleted
+        404:
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /account/user/me/address:
+    get:
+      description: Get the current logged user address
+      tags:
+        - User
+      responses:
+        200:
+          description: User address
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Address'
+        404:
+          description: Address not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /account/user/{user_id}/address:
+    get:
+      description: Get user address
+      tags:
+        - User
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        200:
+          description: User address
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Address'
+        404:
+          description: Address not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /account/user/me/phone:
+    get:
+      description: Get the current logged user phone
+      tags:
+        - User
+      responses:
+        200:
+          description: User phone
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Phone'
+        404:
+          description: Phone not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+
+  /account/user/{user_id}/phone:
+    get:
+      description: Get user phone
+      tags:
+        - User
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        200:
+          description: User phone
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Phone'
+        404:
+          description: Phone not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /account/user/me/complete:
+    get:
+      description: Get the current logged user complete data
+      tags:
+        - User
+      responses:
+        200:
+          description: User complete data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserComplete'
+        404:
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /account/user/{user_id}/complete:
+    get:
+      description: Get user complete data
+      tags:
+        - User
+      parameters:
+        - name: user_id
+          in: path
+          required: true
+          schema:
+            type: number
+      responses:
+        200:
+          description: User complete data
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserComplete'
+        404:
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /auth/login:
+    post:
+      description: Login
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_email:
+                  type: string
+                user_password:
+                  type: string
+      responses:
+        200:
+          description: Logged in
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  refresh_token:
+                    type: string
+                  user:
+                    type: object
+                    properties:
+                      user_id:
+                        type: number
+                      user_name:
+                        type: string
+  /auth/refresh:
+    post:
+      description: Refresh token
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                refresh_token:
+                  type: string
+      responses:
+        200:
+          description: Token refreshed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  token:
+                    type: string
+                  refresh_token:
+                    type: string
+        400:
+          description: Refresh token expired or not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        404:
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    Error:
+      type: object
+      properties:
+        message:
+          type: string
+      required:
+        - message
+    Role:
+      type: object
+      properties:
+        role_id:
+          type: number
+        role_name:
+          type: string
+        role_created_at:
+          type: string
+    Gender:
+      type: object
+      properties:
+        gender_id:
+          type: number
+        gender_name:
+          type: string
+        gender_created_at:
+          type: string
+    State:
+      type: object
+      properties:
+        state_id:
+          type: number
+        state_name:
+          type: string
+        state_uf:
+          type: string
+        state_created_at:
+          type: string
+    City:
+      type: object
+      properties:
+        city_id:
+          type: number
+        city_name:
+          type: string
+        city_state_id:
+          type: number
+        city_created_at:
+          type: string
+    CityWithState:
+      allOf:
+        - $ref: '#/components/schemas/City'
+        - type: object
+        - properties:
+            city_state:
+              $ref: '#/components/schemas/State'           
+    Neighborhood:
+      type: object
+      properties:
+        neighborhood_id:
+          type: number
+        neighborhood_name:
+          type: string
+        neighborhood_city_id:
+          type: number
+        neighborhood_created_at:
+          type: string
+    NeighborhoodWithCity:
+      allOf:
+        - $ref: '#/components/schemas/Neighborhood'
+        - type: object
+        - properties:
+            neighborhood_city:
+              $ref: '#/components/schemas/CityWithState'
+    Address:
+      type: object
+      properties:
+        user_address_id:
+          type: number
+        address_street:
+          type: string
+        address_number:
+          type: number
+        address_complement:
+          type: string
+        address_neighborhood_id:
+          type: number
+        address_zip_code:
+          type: number
+        address_updated_at:
+          type: string
+    AddressWithNeighborhood:
+      allOf:
+        - $ref: '#/components/schemas/Address'
+        - type: object
+        - properties:
+            address_neighborhood:
+              $ref: '#/components/schemas/NeighborhoodWithCity'
+    Phone:
+      type: object
+      properties:
+        user_phone_id:
+          type: number
+        phone_number:
+          type: number
+        phone_ddd:
+          type: number
+        phone_updated_at:
+          type: string
+    UserCreateResponse:
+      type: object
+      properties:
+        user_id:
+          type: string
+        user_name:
+          type: string
+        user_email:
+          type: string
+        user_gender_id:
+          type: number
+        user_created_at:
+          type: string
+        user_updated_at:
+          type: string
+        user_birth_date:
+          type: string
+    UserWithoutPassword:
+      type: object
+      properties:
+        user_id:
+          type: number
+        user_name:
+          type: string
+        user_email:
+          type: string
+        user_cpf:
+          type: string
+        user_role_id:
+          type: number
+        user_gender_id:
+          type: number
+        user_birth_date:
+          type: string
+        user_created_at:
+          type: string
+        user_updated_at:
+          type: string
+    UserUpdateResponse:
+      type: object
+      properties:
+        user_id:
+          type: number
+        user_name:
+          type: string
+        user_email:
+          type: string
+        user_cpf:
+          type: string
+        user_role_id:
+          type: number
+        user_gender_id:
+          type: number
+        user_birth_date:
+          type: string
+        user_phone:
+          $ref: '#/components/schemas/Phone'
+        user_address:
+          $ref: '#/components/schemas/Address'
+        user_created_at:
+          type: string
+        user_updated_at:
+          type: string
+    UserComplete:
+      allOf:
+        - $ref: '#/components/schemas/UserWithoutPassword'
+        - type: object
+        - properties:
+            user_phone:
+              $ref: '#/components/schemas/Phone'
+            user_gender:
+              $ref: '#/components/schemas/Gender'
+            user_role:
+              $ref: '#/components/schemas/Role'
+            user_address:
+              $ref: '#/components/schemas/AddressWithNeighborhood'
+            
+security:
+  - bearerAuth: []

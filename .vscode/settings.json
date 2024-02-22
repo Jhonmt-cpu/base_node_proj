@@ -1,9 +1,11 @@
 {
   "cSpell.words": [
+    "Autogen",
     "dtos",
     "flushall",
     "knexfile",
     "lcov",
+    "openapi",
     "SMALLSERIAL",
     "TINYINT",
     "tsyringe",

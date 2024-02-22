@@ -14,23 +14,23 @@ function flatUserCompleteToUserWithoutPassword(
     user_role_id: flatUserComplete.user_role_id,
     user_birth_date: flatUserComplete.user_birth_date,
     user_gender_id: flatUserComplete.user_gender_id,
-    phone: {
+    user_phone: {
       user_phone_id: flatUserComplete.user_phone_id,
       phone_ddd: flatUserComplete.phone_ddd,
       phone_number: flatUserComplete.phone_number,
       phone_updated_at: flatUserComplete.phone_updated_at,
     },
-    gender: {
+    user_gender: {
       gender_id: flatUserComplete.gender_id,
       gender_name: flatUserComplete.gender_name,
       gender_created_at: flatUserComplete.gender_created_at,
     },
-    role: {
+    user_role: {
       role_id: flatUserComplete.role_id,
       role_name: flatUserComplete.role_name,
       role_created_at: flatUserComplete.role_created_at,
     },
-    address: {
+    user_address: {
       user_address_id: flatUserComplete.user_address_id,
       address_street: flatUserComplete.address_street,
       address_number: flatUserComplete.address_number,

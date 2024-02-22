@@ -33,4 +33,5 @@ export enum AppErrorMessages {
   INCORRECT_EMAIL_OR_PASSWORD = "Incorrect email or password",
   REFRESH_TOKEN_NOT_FOUND = "Refresh token not found",
   REFRESH_TOKEN_INVALID = "Invalid refresh token",
+  REFRESH_TOKEN_EXPIRED = "Refresh token expired",
 }

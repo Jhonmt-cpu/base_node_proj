@@ -30,7 +30,15 @@ class RefreshTokenUseCase {
     );
 
     if (!tokenExists) {
-      throw new AppError(AppErrorMessages.REFRESH_TOKEN_INVALID, 400);
+      throw new AppError(AppErrorMessages.REFRESH_TOKEN_INVALID);
+    }
+
+    const tokenExpired = this.dateProvider.isBeforeNow(
+      tokenExists.refresh_token_expires_in,
+    );
+
+    if (tokenExpired) {
+      throw new AppError(AppErrorMessages.REFRESH_TOKEN_EXPIRED);
     }
 
     const userWithRole = await this.userRepository.findByIdWithRole(

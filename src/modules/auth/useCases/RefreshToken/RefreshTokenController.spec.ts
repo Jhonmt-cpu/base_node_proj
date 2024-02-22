@@ -81,6 +81,30 @@ describe("Refresh Token Controller", () => {
     );
   });
 
+  it("should not be able to refresh a token with an expired refresh token", async () => {
+    const { user_email, user_password } = testConfig.user_test;
+
+    const loginResponse = await request(app).post("/auth/login").send({
+      user_email,
+      user_password,
+    });
+
+    await dbConnection<RefreshTokenEntity>("tb_refresh_tokens")
+      .update({
+        refresh_token_expires_in: new Date("2021-01-01"),
+      })
+      .where({
+        refresh_token_id: loginResponse.body.refresh_token,
+      });
+
+    const response = await request(app).post("/auth/refresh").send({
+      refresh_token: loginResponse.body.refresh_token,
+    });
+
+    expect(response.status).toBe(400);
+    expect(response.body.message).toBe(AppErrorMessages.REFRESH_TOKEN_EXPIRED);
+  });
+
   it("should not be able to refresh a token with a non existing refresh token", async () => {
     const response = await request(app).post("/auth/refresh").send({
       refresh_token: uuid(),

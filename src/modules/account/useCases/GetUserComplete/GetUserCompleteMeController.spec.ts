@@ -68,8 +68,8 @@ describe("Get User Complete Me Controller", () => {
     const cacheValueAfter = await cacheProvider.cacheGet(cacheKey);
 
     expect(response.status).toBe(200);
-    expect(response.body).toHaveProperty("address");
-    expect(response.body).toHaveProperty("phone");
+    expect(response.body).toHaveProperty("user_address");
+    expect(response.body).toHaveProperty("user_phone");
     expect(response.body.user_id).toBe(user.user_id);
     expect(cacheValueBefore).toBeNull();
     expect(cacheValueAfter).not.toBeNull();

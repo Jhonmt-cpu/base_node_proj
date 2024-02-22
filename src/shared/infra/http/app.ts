@@ -1,5 +1,10 @@
 import express, { NextFunction, Request, Response } from "express";
 import { errors } from "celebrate";
+import swaggerUi from "swagger-ui-express";
+import yaml from "yamljs";
+import fs from "fs";
+
+import "@shared/container";
 
 import { AppError } from "@errors/AppError";
 import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
@@ -8,15 +13,19 @@ import rateLimiter from "./middlewares/rateLimiter";
 
 import { router } from "./routes";
 
-import "@shared/container";
-
 const app = express();
+
+const file = fs.readFileSync("docs/doc.yml", "utf8");
+
+const specs = yaml.parse(file);
 
 app.use(express.json());
 
 app.use(rateLimiter);
 
 app.use(router);
+
+app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 
 app.use(errors());
 

@@ -134,6 +134,46 @@ describe("RefreshTokenUseCase", () => {
     );
   });
 
+  it("should not be able to refresh token with an expired refresh token", async () => {
+    await roleRepositoryInMemory.create({
+      role_name: "role_test",
+    });
+
+    const user = {
+      user_name: "User Test 2",
+      user_email: "usertest2@test.com",
+      user_password: "123456",
+      user_birth_date: new Date("2005-01-01"),
+      user_cpf: 12345678911,
+      user_gender_id: 1,
+    };
+
+    const userResponse = await userRepositoryInMemory.create(user);
+
+    const refreshToken = await refreshTokenRepositoryInMemory.create({
+      refresh_token_user_id: userResponse.user_id,
+      refresh_token_expires_in: dateProvider.addDays(
+        Number(auth.refresh.expiresInDays),
+      ),
+    });
+
+    const refreshTokenIndex = dataBaseInMemory.refresh_tokens.findIndex(
+      (refresh) => refresh.refresh_token_id === refreshToken.refresh_token_id,
+    );
+
+    dataBaseInMemory.refresh_tokens[
+      refreshTokenIndex
+    ].refresh_token_expires_in = dateProvider.addDays(-1);
+
+    await expect(
+      refreshTokenUseCase.execute({
+        refresh_token: refreshToken.refresh_token_id,
+      }),
+    ).rejects.toEqual(
+      new AppError(AppErrorMessages.REFRESH_TOKEN_EXPIRED, 400),
+    );
+  });
+
   it("should not be able to refresh token if user does not exists", async () => {
     const refreshToken = await refreshTokenRepositoryInMemory.create({
       refresh_token_user_id: 99999999,
