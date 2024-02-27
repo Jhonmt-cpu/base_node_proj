@@ -34,4 +34,9 @@ export enum AppErrorMessages {
   REFRESH_TOKEN_NOT_FOUND = "Refresh token not found",
   REFRESH_TOKEN_INVALID = "Invalid refresh token",
   REFRESH_TOKEN_EXPIRED = "Refresh token expired",
+  RESET_TOKEN_INVALID = "Invalid reset token",
+  RESET_TOKEN_EXPIRED = "Reset token expired",
+
+  //Internal
+  ERROR_SENDING_EMAIL = "Error sending email",
 }

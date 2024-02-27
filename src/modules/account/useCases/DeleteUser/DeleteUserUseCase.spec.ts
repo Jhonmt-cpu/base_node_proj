@@ -9,9 +9,9 @@ import { PhoneRepositoryInMemory } from "@modules/account/repositories/inMemory/
 import { DatabaseInMemory } from "@shared/repositories/inMemory/DatabaseInMemory";
 import { AppError } from "@shared/errors/AppError";
 import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
-import { InMemoryCacheProvider } from "@shared/container/providers/CacheProvider/implementations/InMemoryCacheProvider";
+import { InMemoryCacheProvider } from "@shared/container/providers/CacheProvider/inMemory/InMemoryCacheProvider";
 import { DayjsDateProvider } from "@shared/container/providers/DateProvider/implementations/DayjsDateProvider";
-import { InMemoryHashProvider } from "@shared/container/providers/HashProvider/implementations/InMemoryHashProvider";
+import { InMemoryHashProvider } from "@shared/container/providers/HashProvider/inMemory/InMemoryHashProvider";
 
 import { DeleteUserUseCase } from "./DeleteUserUseCase";
 

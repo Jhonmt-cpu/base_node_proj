@@ -7,11 +7,11 @@ import { UserRepositoryInMemory } from "@modules/account/repositories/inMemory/U
 import { AddressRepositoryInMemory } from "@modules/account/repositories/inMemory/AddressRepositoryInMemory";
 
 import { DatabaseInMemory } from "@shared/repositories/inMemory/DatabaseInMemory";
-import { InMemoryHashProvider } from "@shared/container/providers/HashProvider/implementations/InMemoryHashProvider";
+import { InMemoryHashProvider } from "@shared/container/providers/HashProvider/inMemory/InMemoryHashProvider";
 import { AppError } from "@shared/errors/AppError";
 import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
 import { DayjsDateProvider } from "@shared/container/providers/DateProvider/implementations/DayjsDateProvider";
-import { InMemoryCacheProvider } from "@shared/container/providers/CacheProvider/implementations/InMemoryCacheProvider";
+import { InMemoryCacheProvider } from "@shared/container/providers/CacheProvider/inMemory/InMemoryCacheProvider";
 
 import { UpdateUserUseCase } from "./UpdateUserUseCase";
 

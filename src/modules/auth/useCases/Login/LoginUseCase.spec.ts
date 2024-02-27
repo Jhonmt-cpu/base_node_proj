@@ -4,7 +4,7 @@ import { CryptoEncryptAndDecryptProvider } from "@modules/auth/container/provide
 import { RefreshTokenRepositoryInMemory } from "@modules/auth/repositories/inMemory/RefreshTokenRepositoryInMemory";
 import { RoleRepositoryInMemory } from "@modules/account/repositories/inMemory/RoleRepositoryInMemory";
 
-import { InMemoryHashProvider } from "@shared/container/providers/HashProvider/implementations/InMemoryHashProvider";
+import { InMemoryHashProvider } from "@shared/container/providers/HashProvider/inMemory/InMemoryHashProvider";
 import { DayjsDateProvider } from "@shared/container/providers/DateProvider/implementations/DayjsDateProvider";
 import { DatabaseInMemory } from "@shared/repositories/inMemory/DatabaseInMemory";
 import { AppError } from "@shared/errors/AppError";

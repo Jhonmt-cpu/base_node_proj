@@ -8,10 +8,10 @@ import { UserRepositoryInMemory } from "@modules/account/repositories/inMemory/U
 
 import { DatabaseInMemory } from "@shared/repositories/inMemory/DatabaseInMemory";
 import { DayjsDateProvider } from "@shared/container/providers/DateProvider/implementations/DayjsDateProvider";
-import { InMemoryHashProvider } from "@shared/container/providers/HashProvider/implementations/InMemoryHashProvider";
+import { InMemoryHashProvider } from "@shared/container/providers/HashProvider/inMemory/InMemoryHashProvider";
 import { AppError } from "@shared/errors/AppError";
 import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
-import { InMemoryCacheProvider } from "@shared/container/providers/CacheProvider/implementations/InMemoryCacheProvider";
+import { InMemoryCacheProvider } from "@shared/container/providers/CacheProvider/inMemory/InMemoryCacheProvider";
 
 import { CreateUserUseCase } from "./CreateUserUseCase";
 

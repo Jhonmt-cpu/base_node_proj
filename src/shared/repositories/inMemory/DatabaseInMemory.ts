@@ -7,6 +7,7 @@ import { PhoneEntity } from "@modules/account/infra/knex/entities/PhoneEntity";
 import { RoleEntity } from "@modules/account/infra/knex/entities/RoleEntity";
 import { StateEntity } from "@modules/account/infra/knex/entities/StateEntity";
 import { UserEntity } from "@modules/account/infra/knex/entities/UserEntity";
+import { ResetTokenEntity } from "@modules/auth/infra/knex/entities/ResetTokenEntity";
 
 class DatabaseInMemory {
   states: StateEntity[] = [];
@@ -26,6 +27,8 @@ class DatabaseInMemory {
   users: UserEntity[] = [];
 
   refresh_tokens: RefreshTokenEntity[] = [];
+
+  reset_tokens: ResetTokenEntity[] = [];
 }
 
 export { DatabaseInMemory };

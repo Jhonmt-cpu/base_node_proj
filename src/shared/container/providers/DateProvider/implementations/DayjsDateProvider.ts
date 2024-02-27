@@ -15,6 +15,10 @@ class DayjsDateProvider implements IDateProvider {
     return dayjs().add(days, "day").toDate();
   }
 
+  addMinutes(minutes: number): Date {
+    return dayjs().add(minutes, "minute").toDate();
+  }
+
   addSeconds(seconds: number): Date {
     return dayjs().add(seconds, "second").toDate();
   }

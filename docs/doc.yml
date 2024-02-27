@@ -829,6 +829,55 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /auth/forgot:
+    post:
+      description: Send email to reset password, it will return always 204 for security reasons
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_email:
+                  type: string
+      responses:
+        204:
+          description: Email sent
+  /auth/reset:
+    post:
+      description: Reset password
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                new_password:
+                  type: string
+                reset_token:
+                  type: string
+      responses:
+        204:
+          description: Password reset
+        400:
+          description: Reset token expired or not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        404:
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        
 components:
   securitySchemes:
     bearerAuth:

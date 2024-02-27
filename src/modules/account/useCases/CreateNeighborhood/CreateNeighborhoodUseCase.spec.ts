@@ -6,7 +6,7 @@ import { NeighborHoodRepositoryInMemory } from "@modules/account/repositories/in
 import { AppError } from "@shared/errors/AppError";
 import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
 import { DayjsDateProvider } from "@shared/container/providers/DateProvider/implementations/DayjsDateProvider";
-import { InMemoryCacheProvider } from "@shared/container/providers/CacheProvider/implementations/InMemoryCacheProvider";
+import { InMemoryCacheProvider } from "@shared/container/providers/CacheProvider/inMemory/InMemoryCacheProvider";
 import { DatabaseInMemory } from "@shared/repositories/inMemory/DatabaseInMemory";
 
 import { CreateNeighborhoodUseCase } from "./CreateNeighborhoodUseCase";

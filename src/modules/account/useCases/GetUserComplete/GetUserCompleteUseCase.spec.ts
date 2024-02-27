@@ -13,7 +13,7 @@ import { flatUserCompleteToUserWithoutPassword } from "@modules/account/mappers/
 import { DatabaseInMemory } from "@shared/repositories/inMemory/DatabaseInMemory";
 import { AppError } from "@shared/errors/AppError";
 import { AppErrorMessages } from "@shared/errors/AppErrorMessages";
-import { InMemoryCacheProvider } from "@shared/container/providers/CacheProvider/implementations/InMemoryCacheProvider";
+import { InMemoryCacheProvider } from "@shared/container/providers/CacheProvider/inMemory/InMemoryCacheProvider";
 import { DayjsDateProvider } from "@shared/container/providers/DateProvider/implementations/DayjsDateProvider";
 
 import { GetUserCompleteUseCase } from "./GetUserCompleteUseCase";

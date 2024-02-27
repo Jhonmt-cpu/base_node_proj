@@ -8,6 +8,7 @@ type IDateProvider = {
   getDifferenceInYears(data: IStartDateEndDate): number;
   getDifferenceInSeconds(data: IStartDateEndDate): number;
   addDays(days: number): Date;
+  addMinutes(minutes: number): Date;
   addSeconds(seconds: number): Date;
   isBeforeNow(date: Date): boolean;
 };

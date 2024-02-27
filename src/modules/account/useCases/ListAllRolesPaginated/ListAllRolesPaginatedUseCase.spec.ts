@@ -3,7 +3,7 @@ import { cachePrefixes } from "@config/cache";
 import { RoleRepositoryInMemory } from "@modules/account/repositories/inMemory/RoleRepositoryInMemory";
 
 import { DatabaseInMemory } from "@shared/repositories/inMemory/DatabaseInMemory";
-import { InMemoryCacheProvider } from "@shared/container/providers/CacheProvider/implementations/InMemoryCacheProvider";
+import { InMemoryCacheProvider } from "@shared/container/providers/CacheProvider/inMemory/InMemoryCacheProvider";
 import { DayjsDateProvider } from "@shared/container/providers/DateProvider/implementations/DayjsDateProvider";
 
 import { ListAllRolesPaginatedUseCase } from "./ListAllRolesPaginatedUseCase";

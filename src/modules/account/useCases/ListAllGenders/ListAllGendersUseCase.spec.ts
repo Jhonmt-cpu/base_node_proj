@@ -4,7 +4,7 @@ import { GenderRepositoryInMemory } from "@modules/account/repositories/inMemory
 
 import { DatabaseInMemory } from "@shared/repositories/inMemory/DatabaseInMemory";
 import { DayjsDateProvider } from "@shared/container/providers/DateProvider/implementations/DayjsDateProvider";
-import { InMemoryCacheProvider } from "@shared/container/providers/CacheProvider/implementations/InMemoryCacheProvider";
+import { InMemoryCacheProvider } from "@shared/container/providers/CacheProvider/inMemory/InMemoryCacheProvider";
 
 import { ListAllGendersUseCase } from "./ListAllGendersUseCase";
 
