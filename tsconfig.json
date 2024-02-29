@@ -1,5 +1,8 @@
 {
   "compilerOptions": {
+    "types": [
+      "jest"
+    ],
     "target": "es2016",
     "lib": [
       "es6"

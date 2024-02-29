@@ -877,6 +877,32 @@ paths:
             application/json:
               schema:
                 $ref: '#/components/schemas/Error'
+  /auth/logout:
+    post:
+      description: Logout an user with admin request
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_id:
+                  type: string
+      responses:
+        204:
+          description: Logged out, it will return always 204 for security reasons
+  /auth/logout/me:
+    post:
+      description: Logout the current logged user
+      tags:
+        - Auth
+      responses:
+        204:
+          description: Logged out, it will return always 204 for security reasons
+         
         
 components:
   securitySchemes:

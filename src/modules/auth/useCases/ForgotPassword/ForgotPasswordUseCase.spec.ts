@@ -1,3 +1,5 @@
+import auth from "@config/auth";
+
 import { UserRepositoryInMemory } from "@modules/account/repositories/inMemory/UserRepositoryInMemory";
 import { ResetTokenRepositoryInMemory } from "@modules/auth/repositories/inMemory/ResetTokenRepositoryInMemory";
 
@@ -6,7 +8,6 @@ import { InMemoryMailProvider } from "@shared/container/providers/MailProvider/i
 import { DatabaseInMemory } from "@shared/repositories/inMemory/DatabaseInMemory";
 
 import { ForgotPasswordUseCase } from "./ForgotPasswordUseCase";
-import auth from "@config/auth";
 
 let databaseInMemory: DatabaseInMemory;
 
